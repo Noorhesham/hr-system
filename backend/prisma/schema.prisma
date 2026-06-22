@@ -1,0 +1,497 @@
+// ============================================================================
+//  Multi-Tenant SaaS — Payroll & HR Management Platform
+//  schema.prisma
+//
+//  Scope:  Core/Tenancy, Auth & RBAC, Settings/Time, HR, Attendance,
+//          Salary Structure, Loans, and the Payroll Engine.
+//
+//  NOTE:   By design this schema contains NO Projects, Cost Centers, or
+//          Cost Allocation concepts. The platform is strictly HR + Payroll.
+//
+//  Conventions:
+//    - PostgreSQL (Neon) as the datasource.
+//    - All primary keys are UUID strings (@id @default(uuid())).
+//    - Multi-tenancy: tenant-root models carry a `companyId`. Child records
+//      (documents, attendance, salary components, loans, slips, ...) are
+//      tenant-scoped transitively through their parent (Employee /
+//      PayrollCycle), so they are never queried outside a tenant context.
+//    - Every model carries createdAt / updatedAt.
+//    - All relations declare an explicit @relation("...") name plus their
+//      fields/references to avoid Prisma ambiguity.
+//    - Monetary values use Decimal(12,2); rates/hours use a smaller Decimal.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection string (Neon pgBouncer) used by the application.
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used by `prisma migrate` against Neon.
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+//  ENUMS
+// ============================================================================
+
+/// Classification of an employee, affecting policies and reporting.
+enum EmploymentType {
+  PERMANENT
+  TEMPORARY
+  CONTRACT
+  PROBATION
+}
+
+/// How an employee's base pay is calculated. This release targets MONTHLY.
+enum SalaryBasis {
+  MONTHLY
+  DAILY
+  HOURLY
+}
+
+/// Whether a recurring salary component adds to or subtracts from pay.
+//this is an array that adds up to hte base salary of the employee 
+enum SalaryComponentType {
+  ALLOWANCE
+  DEDUCTION
+}
+
+/// Types of archived employee documents (expiry-tracked).
+enum DocumentType {
+  NATIONAL_ID
+  RESIDENCY // Iqama
+  PASSPORT
+  CONTRACT
+  CERTIFICATE
+  OTHER
+}
+
+/// Daily attendance state used by the payroll engine.
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+}
+
+/// Lifecycle of an employee loan / advance.
+enum LoanStatus {
+  PENDING
+  APPROVED
+  PAID_OFF
+}
+
+/// Lifecycle of a single scheduled loan installment.
+enum LoanInstallmentStatus {
+  PENDING
+  DEDUCTED
+}
+
+/// Lifecycle of a monthly payroll run.
+enum PayrollCycleStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  CLOSED
+}
+
+/// How lateness is converted into a deduction by the payroll engine.
+enum DelayDeductionType {
+  PER_MINUTE
+  FIXED_AMOUNT
+}
+
+/// Billing state of a tenant's SaaS subscription. A guard/interceptor checks
+/// this on each request; non-active tenants are blocked from write actions.
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+}
+
+// ============================================================================
+//  SAAS SUBSCRIPTIONS
+// ============================================================================
+
+/// A purchasable plan/tier (e.g. Basic, Pro, Enterprise). `maxEmployees` is
+/// the enforced seat cap used to push a tenant to upgrade.
+model SubscriptionPlan {
+  id           String  @id @default(uuid())
+  name         String
+  maxEmployees Int
+  monthlyPrice Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  companies Company[] @relation("CompanyPlan")
+}
+
+// ============================================================================
+//  CORE & MULTI-TENANT
+// ============================================================================
+
+/// Tenant root. Every operational record ultimately belongs to one Company.
+/// Tenant-wide settings (GOSI rates, deduction rules, weekend days, ...) are
+/// kept in the dedicated CompanyPolicy model (1-to-1) to keep this table lean
+/// and to allow the policy snapshot to be cached independently (e.g. Redis)
+/// for the payroll engine without loading the full Company row.
+model Company {
+  id                  String  @id @default(uuid())
+  name                String
+  /// MOL/WPS establishment number used when generating the bank WPS file.
+  establishmentNumber String?
+
+  // -- SaaS subscription / billing --
+  planId             String?
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  /// When the free trial ends (relevant while subscriptionStatus = TRIAL).
+  trialEndsAt        DateTime?
+  /// Next renewal/billing date.
+  nextBillingDate    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  /// SaaS plan this tenant is subscribed to (FK lives on Company).
+  plan          SubscriptionPlan? @relation("CompanyPlan", fields: [planId], references: [id])
+  /// 1-to-1 tenant policy/settings (FK lives on CompanyPolicy).
+  policy        CompanyPolicy?    @relation("CompanyPolicy")
+  roles         Role[]            @relation("CompanyRoles")
+  users         User[]            @relation("CompanyUsers")
+  shifts        Shift[]           @relation("CompanyShifts")
+  employees     Employee[]        @relation("CompanyEmployees")
+  payrollCycles PayrollCycle[]    @relation("CompanyPayrollCycles")
+
+  @@index([planId])
+}
+
+// ============================================================================
+//  POLICIES & SETTINGS
+// ============================================================================
+
+/// Per-tenant payroll & attendance policy. One row per Company (1-to-1).
+/// Holds the tunable rules the payroll engine reads each run; isolating them
+/// here keeps the Company table small and makes the policy easy to cache.
+model CompanyPolicy {
+  id        String @id @default(uuid())
+  companyId String @unique
+
+  // -- Attendance & absence policy --
+  /// Whether lateness is deducted per minute or as a fixed amount.
+  delayDeductionType         DelayDeductionType @default(PER_MINUTE)
+  /// Day-rate multiplier applied to an unexcused absence (1.0 = one day).
+  absenceMultiplierUnexcused Decimal            @default(1.0) @db.Decimal(4, 2)
+  /// Day-rate multiplier applied to an excused absence.
+  absenceMultiplierExcused   Decimal            @default(1.0) @db.Decimal(4, 2)
+
+  // -- Overtime policy --
+  /// Overtime multiplier on normal working days (KSA labor law: 1.5x).
+  overtimeMultiplierNormal  Decimal @default(1.5) @db.Decimal(4, 2)
+  /// Overtime multiplier on rest days / public holidays (2.0x).
+  overtimeMultiplierHoliday Decimal @default(2.0) @db.Decimal(4, 2)
+
+  // -- GOSI (social insurance) policy --
+  /// Employee GOSI contribution percentage.
+  gosiEmployeePercentage Decimal @default(9.75) @db.Decimal(5, 2)
+  /// Employer GOSI contribution percentage.
+  gosiCompanyPercentage  Decimal @default(11.75) @db.Decimal(5, 2)
+  /// GOSI registration number used for social-insurance reporting.
+  gosiNumber             String?
+
+  // -- Weekend / calendar policy --
+  /// Default weekend day names (e.g. ["FRIDAY", "SATURDAY"]).
+  defaultWeekendDays String[] @default(["FRIDAY", "SATURDAY"])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company Company @relation("CompanyPolicy", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+// ============================================================================
+//  AUTH & RBAC
+// ============================================================================
+
+/// A tenant-defined role grouping a set of permissions.
+model Role {
+  id        String @id @default(uuid())
+  name      String
+  companyId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company     Company      @relation("CompanyRoles", fields: [companyId], references: [id], onDelete: Cascade)
+  users       User[]       @relation("RoleUsers")
+  permissions Permission[] @relation("RolePermissions")
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+/// A global, system-defined permission (e.g. "CREATE_EMPLOYEE").
+/// Permissions are reference data shared across tenants, so they are NOT
+/// tenant-scoped. They are attached to Roles via a many-to-many relation.
+model Permission {
+  id     String @id @default(uuid())
+  action String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  roles Role[] @relation("RolePermissions")
+}
+
+/// An authenticated account. May be an admin/HR user or, when linked to an
+/// Employee with `isPortalUser = true`, an employee self-service account.
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  password     String
+  companyId    String
+  roleId       String
+  isPortalUser Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company  Company   @relation("CompanyUsers", fields: [companyId], references: [id], onDelete: Cascade)
+  role     Role      @relation("RoleUsers", fields: [roleId], references: [id])
+  /// Back-relation for the optional 1-to-1 Employee link (FK lives on Employee).
+  employee Employee? @relation("EmployeeUser")
+
+  @@index([companyId])
+  @@index([roleId])
+}
+
+// ============================================================================
+//  SETTINGS & TIME
+// ============================================================================
+
+/// A work shift definition (times stored as "HH:mm" strings, tenant-local).
+model Shift {
+  id                 String @id @default(uuid())
+  companyId          String
+  name               String
+  startTime          String // e.g. "08:00"
+  endTime            String // e.g. "17:00"
+  gracePeriodMinutes Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company           Company            @relation("CompanyShifts", fields: [companyId], references: [id], onDelete: Cascade)
+  employees         Employee[]         @relation("ShiftEmployees")
+  attendanceRecords AttendanceRecord[] @relation("ShiftAttendanceRecords")
+
+  @@index([companyId])
+}
+
+// ============================================================================
+//  HR MODULE
+// ============================================================================
+
+/// The central employee profile.
+model Employee {
+  id               String         @id @default(uuid())
+  companyId        String
+  /// Optional 1-to-1 link to a login account (employee portal access).
+  userId           String?        @unique
+  name             String
+  employmentType   EmploymentType @default(PERMANENT)
+  salaryBasis      SalaryBasis    @default(MONTHLY)
+  basicSalary      Decimal        @default(0) @db.Decimal(12, 2)
+  /// HR toggle: is this employee subject to GOSI? When false, the payroll
+  /// engine skips all GOSI deductions for this employee (e.g. some expats /
+  /// freelancers). The actual deduction rate lives on CompanyPolicy.
+  isGosiRegistered Boolean        @default(false)
+  /// Employee GOSI subscription number — populated only when isGosiRegistered.
+  gosiNumber       String?
+  /// Optional default shift assignment.
+  shiftId          String?
+  isActive         Boolean        @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company           Company            @relation("CompanyEmployees", fields: [companyId], references: [id], onDelete: Cascade)
+  user              User?              @relation("EmployeeUser", fields: [userId], references: [id], onDelete: SetNull)
+  shift             Shift?             @relation("ShiftEmployees", fields: [shiftId], references: [id], onDelete: SetNull)
+  documents         Document[]         @relation("EmployeeDocuments")
+  attendanceRecords AttendanceRecord[] @relation("EmployeeAttendanceRecords")
+  salaryComponents  SalaryComponent[]  @relation("EmployeeSalaryComponents")
+  loans             Loan[]             @relation("EmployeeLoans")
+  payrollSlips      PayrollSlip[]      @relation("EmployeePayrollSlips")
+
+  @@index([companyId])
+  @@index([shiftId])
+}
+
+/// An archived employee document with optional expiry (drives reminders).
+model Document {
+  id         String       @id @default(uuid())
+  employeeId String
+  type       DocumentType
+  expiryDate DateTime?    @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  employee Employee @relation("EmployeeDocuments", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+// ============================================================================
+//  TIME & ATTENDANCE
+// ============================================================================
+
+/// One day's attendance for one employee (imported or manually entered).
+model AttendanceRecord {
+  id            String           @id @default(uuid())
+  employeeId    String
+  shiftId       String?
+  date          DateTime         @db.Date
+  checkIn       DateTime?
+  checkOut      DateTime?
+  delayMinutes  Int              @default(0)
+  overtimeHours Decimal          @default(0) @db.Decimal(6, 2)
+  status        AttendanceStatus @default(PRESENT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  employee Employee @relation("EmployeeAttendanceRecords", fields: [employeeId], references: [id], onDelete: Cascade)
+  shift    Shift?   @relation("ShiftAttendanceRecords", fields: [shiftId], references: [id], onDelete: SetNull)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([shiftId])
+}
+
+// ============================================================================
+//  FINANCIAL STRUCTURE & LOANS
+// ============================================================================
+
+/// A recurring salary line item (allowance or deduction) for an employee.
+/// `isPercentage = true` means `amount` is a percentage of the basic salary.
+model SalaryComponent {
+  id           String              @id @default(uuid())
+  employeeId   String
+  type         SalaryComponentType
+  name         String // e.g. "Housing", "Transport"
+  amount       Decimal             @db.Decimal(12, 2)
+  isPercentage Boolean             @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  employee Employee @relation("EmployeeSalaryComponents", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+/// An employee loan/advance, repaid via scheduled installments.
+model Loan {
+  id          String     @id @default(uuid())
+  employeeId  String
+  totalAmount Decimal    @db.Decimal(12, 2)
+  status      LoanStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  employee     Employee          @relation("EmployeeLoans", fields: [employeeId], references: [id], onDelete: Cascade)
+  installments LoanInstallment[] @relation("LoanInstallments")
+
+  @@index([employeeId])
+}
+
+/// A single scheduled repayment of a loan. `payrollCycleId` is set when the
+/// installment is actually deducted within a payroll run.
+model LoanInstallment {
+  id             String                @id @default(uuid())
+  loanId         String
+  /// Linked when this installment is deducted in a specific payroll cycle.
+  payrollCycleId String?
+  amount         Decimal               @db.Decimal(12, 2)
+  dueDate        DateTime              @db.Date
+  status         LoanInstallmentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  loan         Loan          @relation("LoanInstallments", fields: [loanId], references: [id], onDelete: Cascade)
+  payrollCycle PayrollCycle? @relation("PayrollCycleLoanInstallments", fields: [payrollCycleId], references: [id], onDelete: SetNull)
+
+  @@index([loanId])
+  @@index([payrollCycleId])
+}
+
+// ============================================================================
+//  PAYROLL ENGINE (THE OUTPUT)
+// ============================================================================
+
+/// A monthly payroll run for a company. Unique per company/month/year.
+model PayrollCycle {
+  id        String             @id @default(uuid())
+  companyId String
+  month     Int // 1-12
+  year      Int
+  status    PayrollCycleStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company          Company           @relation("CompanyPayrollCycles", fields: [companyId], references: [id], onDelete: Cascade)
+  payrollSlips     PayrollSlip[]     @relation("PayrollCyclePayrollSlips")
+  loanInstallments LoanInstallment[] @relation("PayrollCycleLoanInstallments")
+
+  @@unique([companyId, month, year])
+  @@index([companyId])
+}
+
+/// An immutable per-employee pay snapshot produced by a payroll cycle.
+/// One slip per employee per cycle.
+model PayrollSlip {
+  id              String  @id @default(uuid())
+  payrollCycleId  String
+  employeeId      String
+  basicSalary     Decimal @db.Decimal(12, 2)
+  totalAllowances Decimal @default(0) @db.Decimal(12, 2)
+  totalDeductions Decimal @default(0) @db.Decimal(12, 2)
+  loanDeductions  Decimal @default(0) @db.Decimal(12, 2)
+  overtimeBonus   Decimal @default(0) @db.Decimal(12, 2)
+  netSalary       Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  payrollCycle PayrollCycle @relation("PayrollCyclePayrollSlips", fields: [payrollCycleId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation("EmployeePayrollSlips", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([payrollCycleId, employeeId])
+  @@index([payrollCycleId])
+  @@index([employeeId])
+}
