@@ -1,21 +1,35 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../enums/user-role.enum';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
+/**
+ * Role-name based authorization. Reads the names required by `@Roles(...)` and
+ * compares them to the authenticated user's `roleName` (set by JwtStrategy).
+ * A handler/class with no `@Roles` is unrestricted.
+ *
+ * Must run AFTER JwtAuthGuard so `request.user` is populated.
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+    const required = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!roles) {
-      return true; // No @Roles → public
+    if (!required || required.length === 0) {
+      return true; // no @Roles → no role restriction
     }
     const { user } = context.switchToHttp().getRequest();
-    return roles.includes(user?.role);
+    if (!user?.roleName || !required.includes(user.roleName)) {
+      throw new ForbiddenException('Insufficient role');
+    }
+    return true;
   }
 }

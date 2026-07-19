@@ -3,14 +3,23 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { configValidationSchema } from './config/config.schema';
 import { DatabaseModule } from './database/database.module';
-import { RedisModule } from './core/redis/redis.module';
 import { HashingModule } from './core/hashing/hashing.module';
 import { MyLoggerModule } from './core/logger/my-logger.module';
-import { CurrencyInterceptor } from './core/interceptors/currency.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
+import { CompanyModule } from './modules/company/company.module';
+import { PlatformModule } from './modules/platform/platform.module';
+import { EmployeeModule } from './modules/employee/employee.module';
+import { DocumentModule } from './modules/document/document.module';
+import { ShiftModule } from './modules/shift/shift.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { SalaryComponentModule } from './modules/salary-component/salary-component.module';
+import { LoanModule } from './modules/loan/loan.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
+import { EssModule } from './modules/ess/ess.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -22,7 +31,7 @@ import { AuthModule } from './modules/auth/auth.module';
 
     // ─── Infrastructure ────────────────────────────────────────────────────
     DatabaseModule,
-    RedisModule,
+  
     HashingModule,
     MyLoggerModule,
 
@@ -40,13 +49,20 @@ import { AuthModule } from './modules/auth/auth.module';
 
     // ─── Feature modules ───────────────────────────────────────────────────
     AuthModule,
+    CompanyModule,
+    PlatformModule,
+    EmployeeModule,
+    DocumentModule,
+    ShiftModule,
+    AttendanceModule,
+    SalaryComponentModule,
+    LoanModule,
+    PayrollModule,
+    EssModule,
+    ReportsModule,
   ],
   providers: [
-    // CurrencyInterceptor runs on EVERY response (converts cents → target currency)
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CurrencyInterceptor,
-    },
+
     // ThrottlerGuard runs globally on EVERY endpoint
     {
       provide: APP_GUARD,

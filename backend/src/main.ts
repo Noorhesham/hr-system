@@ -5,8 +5,11 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import * as express from 'express';
 import { TranslationInterceptor } from './common/interceptors/translation.interceptor';
+import { DecimalInterceptor } from './common/interceptors/decimal.interceptor';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import { MyLoggerService } from './core/logger/my-logger.service';
+import { SwaggerModule } from '@nestjs/swagger';
+import { buildOpenApiConfig } from './openapi.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -14,6 +17,8 @@ async function bootstrap() {
     rawBody: true, // needed for webhook HMAC verification
     bodyParser: false,
   });
+
+  app.setGlobalPrefix('api');
 
   // ─── Body parsers (custom — needed for rawBody capture) ───────────────────
   app.use(
@@ -74,10 +79,21 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new TranslationInterceptor());
+  // Order matters: DecimalInterceptor is registered LAST so it runs FIRST on the
+  // response — converting Decimals to numbers BEFORE TranslationInterceptor
+  // rebuilds the object (which would otherwise flatten Decimals to {s,e,d}).
+  app.useGlobalInterceptors(
+    new TranslationInterceptor(),
+    new DecimalInterceptor(),
+  );
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  const logger = app.get(MyLoggerService);
+  // ─── OpenAPI / Swagger ────────────────────────────────────────────────────
+  // UI at /docs, machine-readable spec at /docs-json (import this into APIDog).
+  const openApiDoc = SwaggerModule.createDocument(app, buildOpenApiConfig());
+  SwaggerModule.setup('docs', app, openApiDoc);
+
+  const logger = await app.resolve(MyLoggerService);
   app.useLogger(logger);
 
   await app.listen(process.env.PORT || 3000);

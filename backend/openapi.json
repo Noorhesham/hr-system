@@ -1,0 +1,2642 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "New company + admin (no plan → trial)",
+                  "value": {
+                    "companyName": "Acme Operations",
+                    "email": "admin@acme.com",
+                    "password": "Passw0rd!",
+                    "establishmentNumber": "1-2345678"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Login",
+                  "value": {
+                    "email": "admin@acme.com",
+                    "password": "Passw0rd!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Change password",
+                  "value": {
+                    "currentPassword": "Passw0rd!",
+                    "newPassword": "NewPassw0rd!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/platform/settings": {
+      "get": {
+        "operationId": "PlatformController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      },
+      "patch": {
+        "operationId": "PlatformController_updateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlatformSettingDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Update platform defaults",
+                  "value": {
+                    "defaultTrialMaxEmployees": 25,
+                    "trialDays": 30
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Platform"
+        ]
+      }
+    },
+    "/company/policy": {
+      "get": {
+        "operationId": "CompanyController_getPolicy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Company"
+        ]
+      },
+      "patch": {
+        "operationId": "CompanyController_updatePolicy",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePolicyDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Update company policy",
+                  "value": {
+                    "delayDeductionType": "PER_MINUTE",
+                    "absenceMultiplierUnexcused": 1,
+                    "absenceMultiplierExcused": 0.5,
+                    "overtimeMultiplierNormal": 1.5,
+                    "overtimeMultiplierHoliday": 2,
+                    "gosiEmployeePercentage": 9.75,
+                    "gosiCompanyPercentage": 11.75,
+                    "gosiNumber": "GOSI-99887",
+                    "defaultWeekendDays": [
+                      "FRIDAY",
+                      "SATURDAY"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Company"
+        ]
+      }
+    },
+    "/employees": {
+      "post": {
+        "operationId": "EmployeeController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEmployeeDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "New employee",
+                  "value": {
+                    "name": "Ahmed Ali",
+                    "email": "ahmed@acme.com",
+                    "basicSalary": 5000,
+                    "employmentType": "PERMANENT",
+                    "salaryBasis": "MONTHLY",
+                    "isGosiRegistered": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Employees"
+        ]
+      },
+      "get": {
+        "operationId": "EmployeeController_findAll",
+        "parameters": [
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/employees/{id}": {
+      "get": {
+        "operationId": "EmployeeController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Employees"
+        ]
+      },
+      "patch": {
+        "operationId": "EmployeeController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmployeeDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Update",
+                  "value": {
+                    "basicSalary": 6000,
+                    "isActive": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/employees/{employeeId}/documents": {
+      "post": {
+        "operationId": "DocumentController_create",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDocumentDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Add document",
+                  "value": {
+                    "type": "NATIONAL_ID",
+                    "expiryDate": "2027-12-31",
+                    "documentNumber": "1234567890",
+                    "fileUrl": "https://files.example.com/id.pdf"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Documents"
+        ]
+      },
+      "get": {
+        "operationId": "DocumentController_findAll",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/documents/expiring": {
+      "get": {
+        "operationId": "DocumentController_findExpiring",
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/documents/{id}": {
+      "delete": {
+        "operationId": "DocumentController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/shifts": {
+      "post": {
+        "operationId": "ShiftController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShiftDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Morning shift",
+                  "value": {
+                    "name": "Morning",
+                    "startTime": "08:00",
+                    "endTime": "17:00",
+                    "gracePeriodMinutes": 15
+                  }
+                },
+                "overnight": {
+                  "summary": "Night shift (crosses midnight)",
+                  "value": {
+                    "name": "Night",
+                    "startTime": "22:00",
+                    "endTime": "06:00",
+                    "gracePeriodMinutes": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Shifts"
+        ]
+      },
+      "get": {
+        "operationId": "ShiftController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Shifts"
+        ]
+      }
+    },
+    "/shifts/{id}": {
+      "get": {
+        "operationId": "ShiftController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Shifts"
+        ]
+      },
+      "patch": {
+        "operationId": "ShiftController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShiftDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Shifts"
+        ]
+      },
+      "delete": {
+        "operationId": "ShiftController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Shifts"
+        ]
+      }
+    },
+    "/attendance/check-in": {
+      "post": {
+        "operationId": "AttendanceController_checkIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInDto"
+              },
+              "examples": {
+                "owner": {
+                  "summary": "Owner punches for an employee",
+                  "value": {
+                    "employeeId": "employee-uuid"
+                  }
+                },
+                "portal": {
+                  "summary": "Employee self check-in (empty body)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/attendance/check-out": {
+      "post": {
+        "operationId": "AttendanceController_checkOut",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckOutDto"
+              },
+              "examples": {
+                "owner": {
+                  "summary": "Owner punches out for an employee",
+                  "value": {
+                    "employeeId": "employee-uuid"
+                  }
+                },
+                "portal": {
+                  "summary": "Employee self check-out",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/attendance": {
+      "post": {
+        "operationId": "AttendanceController_upsert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertAttendanceDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Manual entry (needs shift on employee)",
+                  "value": {
+                    "employeeId": "employee-uuid",
+                    "date": "2026-06-29",
+                    "checkIn": "2026-06-29T08:05:00+03:00",
+                    "checkOut": "2026-06-29T17:30:00+03:00"
+                  }
+                },
+                "leave": {
+                  "summary": "Mark a leave day",
+                  "value": {
+                    "employeeId": "employee-uuid",
+                    "date": "2026-06-29",
+                    "status": "LEAVE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      },
+      "get": {
+        "operationId": "AttendanceController_findAll",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PRESENT",
+                "ABSENT",
+                "LEAVE"
+              ]
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive lower bound (date).",
+            "schema": {
+              "example": "2026-06-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Inclusive upper bound (date).",
+            "schema": {
+              "example": "2026-06-30",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/attendance/bulk": {
+      "post": {
+        "operationId": "AttendanceController_bulk",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkAttendanceDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Two rows",
+                  "value": {
+                    "records": [
+                      {
+                        "employeeId": "employee-uuid",
+                        "date": "2026-06-29",
+                        "checkIn": "2026-06-29T08:00:00+03:00",
+                        "checkOut": "2026-06-29T17:10:00+03:00"
+                      },
+                      {
+                        "employeeId": "employee-uuid-2",
+                        "date": "2026-06-29",
+                        "status": "ABSENT"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/attendance/{id}": {
+      "get": {
+        "operationId": "AttendanceController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      },
+      "patch": {
+        "operationId": "AttendanceController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAttendanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Attendance"
+        ]
+      }
+    },
+    "/employees/{employeeId}/salary-components": {
+      "post": {
+        "operationId": "SalaryComponentController_create",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSalaryComponentDto"
+              },
+              "examples": {
+                "allowance": {
+                  "summary": "Fixed housing allowance",
+                  "value": {
+                    "type": "ALLOWANCE",
+                    "name": "Housing",
+                    "amount": 1000,
+                    "isPercentage": false
+                  }
+                },
+                "percentage": {
+                  "summary": "Percentage-based allowance",
+                  "value": {
+                    "type": "ALLOWANCE",
+                    "name": "Transport",
+                    "amount": 10,
+                    "isPercentage": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Salary Components"
+        ]
+      },
+      "get": {
+        "operationId": "SalaryComponentController_findAll",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Salary Components"
+        ]
+      }
+    },
+    "/salary-components/{id}": {
+      "patch": {
+        "operationId": "SalaryComponentController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSalaryComponentDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Update amount",
+                  "value": {
+                    "amount": 1500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Salary Components"
+        ]
+      },
+      "delete": {
+        "operationId": "SalaryComponentController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Salary Components"
+        ]
+      }
+    },
+    "/employees/{employeeId}/loans": {
+      "post": {
+        "operationId": "LoanController_create",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLoanDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "New loan",
+                  "value": {
+                    "totalAmount": 12000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      },
+      "get": {
+        "operationId": "LoanController_findAllForEmployee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      }
+    },
+    "/loans": {
+      "get": {
+        "operationId": "LoanController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "PAID_OFF"
+              ]
+            }
+          },
+          {
+            "name": "employeeId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      }
+    },
+    "/loans/{id}": {
+      "get": {
+        "operationId": "LoanController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      },
+      "delete": {
+        "operationId": "LoanController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      }
+    },
+    "/loans/{id}/approve": {
+      "patch": {
+        "operationId": "LoanController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveLoanDto"
+              },
+              "examples": {
+                "byCount": {
+                  "summary": "Split into 6 equal installments",
+                  "value": {
+                    "numberOfInstallments": 6,
+                    "startDate": "2026-08-01"
+                  }
+                },
+                "byAmount": {
+                  "summary": "Fixed 2000/month (last absorbs remainder)",
+                  "value": {
+                    "installmentAmount": 2000,
+                    "startDate": "2026-08-01"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Loans"
+        ]
+      }
+    },
+    "/payroll/cycles": {
+      "post": {
+        "operationId": "PayrollController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayrollCycleDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "July 2026 payroll",
+                  "value": {
+                    "month": 7,
+                    "year": 2026
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      },
+      "get": {
+        "operationId": "PayrollController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "REVIEW",
+                "APPROVED",
+                "CLOSED"
+              ]
+            }
+          },
+          {
+            "name": "month",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}": {
+      "get": {
+        "operationId": "PayrollController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/slips/{slipId}": {
+      "get": {
+        "operationId": "PayrollController_findSlip",
+        "parameters": [
+          {
+            "name": "slipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}/recalculate": {
+      "post": {
+        "operationId": "PayrollController_recalculate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}/review": {
+      "patch": {
+        "operationId": "PayrollController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}/approve": {
+      "patch": {
+        "operationId": "PayrollController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}/close": {
+      "patch": {
+        "operationId": "PayrollController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/payroll/cycles/{id}/wps": {
+      "get": {
+        "operationId": "PayrollController_exportWps",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payroll"
+        ]
+      }
+    },
+    "/ess/me": {
+      "get": {
+        "operationId": "EssController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/salary-components": {
+      "get": {
+        "operationId": "EssController_salaryComponents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/documents": {
+      "get": {
+        "operationId": "EssController_documents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/attendance": {
+      "get": {
+        "operationId": "EssController_attendance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/loans": {
+      "get": {
+        "operationId": "EssController_loans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/payslips": {
+      "get": {
+        "operationId": "EssController_payslips",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/ess/payslips/{id}": {
+      "get": {
+        "operationId": "EssController_payslip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "ESS"
+        ]
+      }
+    },
+    "/reports/dashboard": {
+      "get": {
+        "operationId": "ReportsController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/reports/payroll-summary": {
+      "get": {
+        "operationId": "ReportsController_payrollSummary",
+        "parameters": [
+          {
+            "name": "month",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/reports/attendance-summary": {
+      "get": {
+        "operationId": "ReportsController_attendanceSummary",
+        "parameters": [
+          {
+            "name": "month",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/reports/gosi": {
+      "get": {
+        "operationId": "ReportsController_gosi",
+        "parameters": [
+          {
+            "name": "month",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Reports"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "HR System API",
+    "description": "Multi-tenant Payroll & HR Management API (Phases 1–6). Import into APIDog via live URL http://localhost:3004/docs-json or backend/postman_collection.json. Swagger UI: http://localhost:3004/docs",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Registration, login, token refresh, logout"
+    },
+    {
+      "name": "Company",
+      "description": "Tenant settings / policy (Company Owner to update)"
+    },
+    {
+      "name": "Platform",
+      "description": "Global platform defaults — platform admin only"
+    },
+    {
+      "name": "Employees",
+      "description": "Employee management + auto portal account"
+    },
+    {
+      "name": "Documents",
+      "description": "Employee documents (metadata + URL)"
+    },
+    {
+      "name": "Shifts",
+      "description": "Work shift definitions (times + grace period)"
+    },
+    {
+      "name": "Attendance",
+      "description": "Check-in/out (shift required), manual entry, bulk; delay/overtime engine"
+    },
+    {
+      "name": "Salary Components",
+      "description": "Recurring allowances/deductions per employee"
+    },
+    {
+      "name": "Loans",
+      "description": "Employee loans/advances with installment schedules"
+    },
+    {
+      "name": "Payroll",
+      "description": "Payroll cycles, calculation engine, approve/close, WPS export"
+    },
+    {
+      "name": "ESS",
+      "description": "Employee Self-Service portal (Employee role) — profile, payslips, attendance"
+    },
+    {
+      "name": "Reports",
+      "description": "Owner KPIs and monthly summaries (payroll, attendance, GOSI)"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3004/api",
+      "description": "Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string",
+            "example": "Acme Operations",
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "example": "admin@acme.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "example": "Passw0rd!",
+            "minLength": 8,
+            "maxLength": 72,
+            "description": "Must contain at least one lowercase letter, one uppercase letter and one number"
+          },
+          "establishmentNumber": {
+            "type": "string",
+            "example": "1-2345678",
+            "maxLength": 50,
+            "description": "MOL/WPS establishment number"
+          },
+          "planId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional. Omit to create the company with NO plan (stays on TRIAL)."
+          }
+        },
+        "required": [
+          "companyName",
+          "email",
+          "password"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@acme.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "example": "Passw0rd!"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "example": "Passw0rd!"
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "NewPassw0rd!",
+            "minLength": 8,
+            "maxLength": 72,
+            "description": "Must contain at least one lowercase letter, one uppercase letter and one number"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "UpdatePlatformSettingDto": {
+        "type": "object",
+        "properties": {
+          "defaultTrialMaxEmployees": {
+            "type": "number",
+            "example": 10,
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Seat cap applied to trial / no-plan companies"
+          },
+          "trialDays": {
+            "type": "number",
+            "example": 14,
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Trial length in days, applied at company registration"
+          }
+        }
+      },
+      "UpdatePolicyDto": {
+        "type": "object",
+        "properties": {
+          "delayDeductionType": {
+            "type": "string",
+            "enum": [
+              "PER_MINUTE",
+              "FIXED_AMOUNT"
+            ],
+            "example": "PER_MINUTE"
+          },
+          "absenceMultiplierUnexcused": {
+            "type": "number",
+            "example": 1,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "absenceMultiplierExcused": {
+            "type": "number",
+            "example": 0.5,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "overtimeMultiplierNormal": {
+            "type": "number",
+            "example": 1.5,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "overtimeMultiplierHoliday": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0,
+            "maximum": 10
+          },
+          "gosiEmployeePercentage": {
+            "type": "number",
+            "example": 9.75,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "gosiCompanyPercentage": {
+            "type": "number",
+            "example": 11.75,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "gosiNumber": {
+            "type": "string",
+            "example": "GOSI-99887",
+            "maxLength": 50
+          },
+          "defaultWeekendDays": {
+            "example": [
+              "FRIDAY",
+              "SATURDAY"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ahmed Ali",
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "example": "ahmed@acme.com",
+            "format": "email",
+            "description": "Login email for the auto-created portal account (unique)."
+          },
+          "basicSalary": {
+            "type": "number",
+            "example": 5000,
+            "minimum": 0,
+            "description": "Basic salary"
+          },
+          "employmentType": {
+            "type": "string",
+            "enum": [
+              "PERMANENT",
+              "TEMPORARY",
+              "CONTRACT",
+              "PROBATION"
+            ],
+            "example": "PERMANENT"
+          },
+          "salaryBasis": {
+            "type": "string",
+            "enum": [
+              "MONTHLY",
+              "DAILY",
+              "HOURLY"
+            ],
+            "example": "MONTHLY"
+          },
+          "shiftId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional shift to assign (must belong to your company)."
+          },
+          "isGosiRegistered": {
+            "type": "boolean",
+            "example": false
+          },
+          "gosiNumber": {
+            "type": "string",
+            "example": "123456789",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "basicSalary"
+        ]
+      },
+      "UpdateEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ahmed Ali",
+            "maxLength": 120
+          },
+          "basicSalary": {
+            "type": "number",
+            "example": 6000,
+            "minimum": 0
+          },
+          "employmentType": {
+            "type": "string",
+            "enum": [
+              "PERMANENT",
+              "TEMPORARY",
+              "CONTRACT",
+              "PROBATION"
+            ]
+          },
+          "salaryBasis": {
+            "type": "string",
+            "enum": [
+              "MONTHLY",
+              "DAILY",
+              "HOURLY"
+            ]
+          },
+          "shiftId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": false,
+            "description": "Set to false to deactivate the employee (resignation)."
+          },
+          "isGosiRegistered": {
+            "type": "boolean",
+            "example": true
+          },
+          "gosiNumber": {
+            "type": "string",
+            "example": "123456789",
+            "maxLength": 50
+          }
+        }
+      },
+      "CreateDocumentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "NATIONAL_ID",
+              "RESIDENCY",
+              "PASSPORT",
+              "CONTRACT",
+              "CERTIFICATE",
+              "OTHER"
+            ],
+            "example": "NATIONAL_ID"
+          },
+          "expiryDate": {
+            "type": "string",
+            "example": "2027-12-31",
+            "description": "Expiry date (drives renewal reminders)."
+          },
+          "fileUrl": {
+            "type": "string",
+            "example": "https://files.example.com/id.pdf"
+          },
+          "documentNumber": {
+            "type": "string",
+            "example": "1234567890",
+            "maxLength": 50
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "CreateShiftDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Morning",
+            "maxLength": 120
+          },
+          "startTime": {
+            "type": "string",
+            "example": "08:00",
+            "description": "24-hour HH:mm"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "17:00",
+            "description": "24-hour HH:mm. May be <= startTime for overnight shifts."
+          },
+          "gracePeriodMinutes": {
+            "type": "number",
+            "example": 15,
+            "minimum": 0,
+            "maximum": 240
+          }
+        },
+        "required": [
+          "name",
+          "startTime",
+          "endTime"
+        ]
+      },
+      "UpdateShiftDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Morning",
+            "maxLength": 120
+          },
+          "startTime": {
+            "type": "string",
+            "example": "08:00"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "gracePeriodMinutes": {
+            "type": "number",
+            "example": 15,
+            "minimum": 0,
+            "maximum": 240
+          }
+        }
+      },
+      "CheckInDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Required for Company Owner. Portal employees must omit this (self only)."
+          },
+          "at": {
+            "type": "string",
+            "example": "2026-06-29T08:05:00+03:00",
+            "description": "ISO timestamp (include offset or Z). Defaults to now."
+          },
+          "shiftId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Override the employee's default shift for this day."
+          }
+        }
+      },
+      "CheckOutDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Required for Company Owner. Portal employees must omit this (self only)."
+          },
+          "at": {
+            "type": "string",
+            "example": "2026-06-29T17:30:00+03:00",
+            "description": "ISO timestamp (include offset or Z). Defaults to now."
+          }
+        }
+      },
+      "UpsertAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-06-29",
+            "description": "Calendar day (tenant-local)."
+          },
+          "shiftId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "checkIn": {
+            "type": "string",
+            "example": "2026-06-29T08:05:00+03:00"
+          },
+          "checkOut": {
+            "type": "string",
+            "example": "2026-06-29T17:30:00+03:00"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "ABSENT",
+              "LEAVE"
+            ],
+            "example": "PRESENT"
+          },
+          "delayMinutes": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Manual override of derived delay."
+          },
+          "overtimeHours": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Manual override of derived overtime."
+          }
+        },
+        "required": [
+          "employeeId",
+          "date"
+        ]
+      },
+      "BulkAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpsertAttendanceDto"
+            }
+          }
+        },
+        "required": [
+          "records"
+        ]
+      },
+      "UpdateAttendanceDto": {
+        "type": "object",
+        "properties": {
+          "shiftId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "checkIn": {
+            "type": "string",
+            "example": "2026-06-29T08:05:00+03:00"
+          },
+          "checkOut": {
+            "type": "string",
+            "example": "2026-06-29T17:30:00+03:00"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "ABSENT",
+              "LEAVE"
+            ]
+          },
+          "delayMinutes": {
+            "type": "number",
+            "minimum": 0
+          },
+          "overtimeHours": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "CreateSalaryComponentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ALLOWANCE",
+              "DEDUCTION"
+            ],
+            "example": "ALLOWANCE"
+          },
+          "name": {
+            "type": "string",
+            "example": "Housing",
+            "maxLength": 120
+          },
+          "amount": {
+            "type": "number",
+            "example": 1000,
+            "minimum": 0,
+            "description": "Fixed amount, or a 0–100 percentage when isPercentage is true."
+          },
+          "isPercentage": {
+            "type": "boolean",
+            "example": false,
+            "description": "When true, amount is a percentage of the basic salary."
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "amount"
+        ]
+      },
+      "UpdateSalaryComponentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ALLOWANCE",
+              "DEDUCTION"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "example": "Transport",
+            "maxLength": 120
+          },
+          "amount": {
+            "type": "number",
+            "example": 500,
+            "minimum": 0
+          },
+          "isPercentage": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "CreateLoanDto": {
+        "type": "object",
+        "properties": {
+          "totalAmount": {
+            "type": "number",
+            "example": 12000,
+            "description": "Total loan amount (must be positive)."
+          }
+        },
+        "required": [
+          "totalAmount"
+        ]
+      },
+      "ApproveLoanDto": {
+        "type": "object",
+        "properties": {
+          "numberOfInstallments": {
+            "type": "number",
+            "example": 6,
+            "description": "Split the total into this many equal monthly installments."
+          },
+          "installmentAmount": {
+            "type": "number",
+            "example": 2000,
+            "description": "Fixed monthly installment amount (the last one absorbs any remainder)."
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2026-08-01",
+            "description": "Due date of the first installment; each following one is +1 month."
+          }
+        },
+        "required": [
+          "startDate"
+        ]
+      },
+      "CreatePayrollCycleDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "number",
+            "example": 7,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "year": {
+            "type": "number",
+            "example": 2026,
+            "minimum": 2000,
+            "maximum": 2100
+          }
+        },
+        "required": [
+          "month",
+          "year"
+        ]
+      }
+    }
+  }
+}

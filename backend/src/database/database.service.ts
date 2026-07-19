@@ -8,11 +8,21 @@ export class DatabaseService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger(DatabaseService.name);
 
   constructor() {
+    // Neon serverless can take 10–20s to wake from idle; keep the pool small
+    // (Neon pooler / free tier cap concurrent connections).
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      max: 50,
+      max: 10,
       idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 30_000,
+      // Allow first query after idle wake without failing the whole request.
+      allowExitOnIdle: true,
+    });
+    pool.on('error', (err) => {
+      Logger.error(
+        `Unexpected idle client error: ${err.message}`,
+        DatabaseService.name,
+      );
     });
     super({ adapter: new PrismaPg(pool) });
   }

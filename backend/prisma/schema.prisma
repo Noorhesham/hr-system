@@ -45,7 +45,10 @@ enum EmploymentType {
   PROBATION
 }
 
-/// How an employee's base pay is calculated. This release targets MONTHLY.
+/// How an employee's base pay is calculated.
+/// MONTHLY: basicSalary = month salary (day-rate = basic/30).
+/// DAILY:   basicSalary = pay per PRESENT day.
+/// HOURLY:  basicSalary = hourly rate × regular hours from punches.
 enum SalaryBasis {
   MONTHLY
   DAILY
@@ -132,14 +135,32 @@ model SubscriptionPlan {
 }
 
 // ============================================================================
+//  PLATFORM (GLOBAL) SETTINGS
+// ============================================================================
+
+/// Single-row, platform-wide configuration (NOT tenant-scoped). Holds the
+/// dynamic defaults applied to TRIAL / no-plan companies. Editing this is a
+/// platform-operator action — no tenant "Super Admin" may change it.
+model PlatformSetting {
+  /// Fixed singleton id — there is always exactly one row ("global").
+  id                       String @id @default("global")
+  /// Seat cap applied to a company on TRIAL / with no plan.
+  defaultTrialMaxEmployees Int    @default(10)
+  /// Trial length in days, applied when a company registers.
+  trialDays                Int    @default(14)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
 //  CORE & MULTI-TENANT
 // ============================================================================
 
 /// Tenant root. Every operational record ultimately belongs to one Company.
 /// Tenant-wide settings (GOSI rates, deduction rules, weekend days, ...) are
 /// kept in the dedicated CompanyPolicy model (1-to-1) to keep this table lean
-/// and to allow the policy snapshot to be cached independently (e.g. Redis)
-/// for the payroll engine without loading the full Company row.
+/// and to give the Settings screens a clean, self-contained target to edit.
 model Company {
   id                  String  @id @default(uuid())
   name                String
@@ -177,7 +198,7 @@ model Company {
 
 /// Per-tenant payroll & attendance policy. One row per Company (1-to-1).
 /// Holds the tunable rules the payroll engine reads each run; isolating them
-/// here keeps the Company table small and makes the policy easy to cache.
+/// here keeps the Company table small and gives Settings one place to manage.
 model CompanyPolicy {
   id        String @id @default(uuid())
   companyId String @unique
@@ -256,12 +277,17 @@ model Permission {
 /// An authenticated account. May be an admin/HR user or, when linked to an
 /// Employee with `isPortalUser = true`, an employee self-service account.
 model User {
-  id           String  @id @default(uuid())
-  email        String  @unique
-  password     String
-  companyId    String
-  roleId       String
-  isPortalUser Boolean @default(false)
+  id               String  @id @default(uuid())
+  email            String  @unique
+  password         String
+  companyId        String
+  roleId           String
+  isPortalUser     Boolean @default(false)
+  /// Hashed (bcrypt) current refresh token; null once the user logs out.
+  refreshTokenHash String?
+  /// Platform-level superuser (the SaaS operator): cross-tenant, all-access.
+  /// Distinct from the tenant "Company Owner" role. Set manually / via seed.
+  isPlatformAdmin  Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -343,10 +369,14 @@ model Employee {
 
 /// An archived employee document with optional expiry (drives reminders).
 model Document {
-  id         String       @id @default(uuid())
-  employeeId String
-  type       DocumentType
-  expiryDate DateTime?    @db.Date
+  id             String       @id @default(uuid())
+  employeeId     String
+  type           DocumentType
+  expiryDate     DateTime?    @db.Date
+  /// Link to the stored file (upload comes later; metadata + URL for now).
+  fileUrl        String?
+  /// The document's own number (e.g. national ID / passport / contract no.).
+  documentNumber String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,95 +1,151 @@
 import {
-  Controller,
-  Post,
-  Get,
   Body,
-  UseGuards,
-  Res,
-  Req,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
-  Inject,
+  Post,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCookieAuth,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, ForgotPasswordDto, TwoFADto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto, RegisterDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
-import { GetUser } from '../../common/decorators/get-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { UserRole } from '../../common/enums/user-role.enum';
-import { AuthenticatedUser } from './strategies/jwt.strategy';
-import { Throttle } from '@nestjs/throttler';
-import { REDIS_CLIENT } from '../../core/redis/redis.module';
-import Redis from 'ioredis';
-import * as crypto from 'crypto';
+import type { AuthenticatedUser } from './strategies/jwt.strategy';
+import { CurrentUser } from '../tenant/decorators/tenant.decorator';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    @Inject(REDIS_CLIENT) private readonly redis: Redis,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Provision a new company + admin user. Returns 201 with an access token and
+   * sets the rotating refresh token as an httpOnly cookie.
+   */
+  @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiBody({
+    type: RegisterDto,
+    examples: {
+      default: {
+        summary: 'New company + admin (no plan → trial)',
+        value: {
+          companyName: 'Acme Operations',
+          email: 'admin@acme.com',
+          password: 'Passw0rd!',
+          establishmentNumber: '1-2345678',
+        },
+      },
+    },
+  })
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.register(dto);
+    this.authService.setRefreshTokenCookie(res, refreshToken);
+    return { accessToken, user };
+  }
+
+  /** Authenticate; returns an access token + sets the refresh cookie. */
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBody({
+    type: LoginDto,
+    examples: {
+      default: {
+        summary: 'Login',
+        value: { email: 'admin@acme.com', password: 'Passw0rd!' },
+      },
+    },
+  })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // Basic boilerplate login handler
-    // In production, verify user credentials and call handleFailedLogin on mismatch
-    return { message: 'Login endpoint' };
+    const { accessToken, refreshToken, user } =
+      await this.authService.login(dto);
+    this.authService.setRefreshTokenCookie(res, refreshToken);
+    return { accessToken, user };
   }
 
-  @Post('password/forgot')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return { message: 'Password forgot endpoint' };
-  }
-
-  @Post('2fa/authenticate')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 300_000 } })
-  async authenticate2FA(@Body() dto: TwoFADto) {
-    return { message: '2FA authentication endpoint' };
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  async getMe(@GetUser() user: AuthenticatedUser) {
-    return user;
-  }
-
-  @Get('admin/users')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async listUsers() {
-    return { message: 'Admin users list endpoint' };
-  }
-
+  /**
+   * Exchange a valid refresh cookie for a new token pair (rotation).
+   * The old refresh token is invalidated server-side.
+   */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
   @UseGuards(RefreshTokenGuard)
   async refresh(
-    @GetUser() user: any,
+    @CurrentUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const tokens = await this.authService.generateTokens(user);
-    this.authService.setRefreshTokenCookie(res, tokens.refreshToken);
-    return { accessToken: tokens.accessToken };
+    const { accessToken, refreshToken } =
+      await this.authService.refreshTokens(user);
+    this.authService.setRefreshTokenCookie(res, refreshToken);
+    return { accessToken };
   }
 
-  @Get('google/callback')
-  async googleCallback(@Req() req: any, @Res() res: Response) {
-    // Simulating callback code redirect logic
-    const tokens = { accessToken: 'dummy_access', refreshToken: 'dummy_refresh' };
-    const code = crypto.randomUUID();
-    await this.redis.setex(`google:code:${code}`, 120, JSON.stringify(tokens));
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    return res.redirect(`${frontendUrl}/auth/callback?code=${code}`);
+  /** Revoke the refresh token (server-side) and clear the cookie. */
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async logout(
+    @CurrentUser('userId') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(userId);
+    this.authService.clearRefreshTokenCookie(res);
+    return { success: true };
+  }
+
+  /**
+   * Change the current user's password (employees included). Verifies the
+   * current password, then re-issues tokens (old refresh sessions are revoked).
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiBody({
+    type: ChangePasswordDto,
+    examples: {
+      default: {
+        summary: 'Change password',
+        value: { currentPassword: 'Passw0rd!', newPassword: 'NewPassw0rd!' },
+      },
+    },
+  })
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken } =
+      await this.authService.changePassword(user, dto);
+    this.authService.setRefreshTokenCookie(res, refreshToken);
+    return { accessToken };
+  }
+
+  /** Echo the authenticated principal (handy for verifying a token). */
+  @Get('me')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: AuthenticatedUser) {
+    return user;
   }
 }

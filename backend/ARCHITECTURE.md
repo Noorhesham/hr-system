@@ -169,7 +169,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TranslationInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  const logger = app.get(MyLoggerService);
+  const logger = await app.resolve(MyLoggerService);
   app.useLogger(logger);
 
   await app.listen(process.env.PORT || 3000);

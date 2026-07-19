@@ -7,18 +7,21 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { DatabaseModule } from '../../database/database.module';
 import { HashingModule } from '../../core/hashing/hashing.module';
-import { RedisModule } from '../../core/redis/redis.module';
+import { UserModule } from '../user/user.module';
+import { PlatformModule } from '../platform/platform.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    // Signing options are passed per-call in AuthService (secret + expiry).
     JwtModule.register({}),
     DatabaseModule,
     HashingModule,
-    RedisModule,
+    UserModule,
+    PlatformModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
-  exports: [AuthService, PassportModule, JwtModule],
+  exports: [AuthService],
 })
 export class AuthModule {}
