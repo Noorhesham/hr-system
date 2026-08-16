@@ -341,17 +341,23 @@ export class AuthService {
 
   // ─── Cookie helpers (the refresh token lives ONLY in an httpOnly cookie) ──────
   setRefreshTokenCookie(res: Response, refreshToken: string) {
-    res.cookie(REFRESH_COOKIE, refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: REFRESH_MAX_AGE_MS,
-      path: REFRESH_COOKIE_PATH,
-    });
+    res.cookie(REFRESH_COOKIE, refreshToken, this.refreshCookieOptions());
   }
 
   clearRefreshTokenCookie(res: Response) {
-    res.clearCookie(REFRESH_COOKIE, { path: REFRESH_COOKIE_PATH });
+    res.clearCookie(REFRESH_COOKIE, this.refreshCookieOptions());
+  }
+
+  /** Cross-site (Vercel → Render) needs SameSite=None; Secure. Local stays Lax. */
+  private refreshCookieOptions() {
+    const isProd = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+      maxAge: REFRESH_MAX_AGE_MS,
+      path: REFRESH_COOKIE_PATH,
+    };
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
