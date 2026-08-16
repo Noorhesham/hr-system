@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { OnboardingStep, SubscriptionStatus } from '@prisma/client';
 
 /** Claims carried inside the signed access token. `sub` is the userId. */
 export interface JwtPayload {
@@ -9,11 +10,14 @@ export interface JwtPayload {
   companyId: string;
   roleId: string;
   roleName: string;
+  permissions: string[];
   isPlatformAdmin: boolean;
-  /** True when this login is an employee portal account. */
   isPortalUser: boolean;
-  /** Linked Employee.id for portal users; null for company admins. */
   employeeId: string | null;
+  onboardingStep?: OnboardingStep | null;
+  onboardingCompletedAt?: string | null;
+  planId?: string | null;
+  subscriptionStatus?: SubscriptionStatus | null;
 }
 
 /** Shape attached to `request.user` after a token is validated. */
@@ -22,13 +26,18 @@ export interface AuthenticatedUser {
   email: string;
   companyId: string;
   roleId: string;
-  /** Per-company role name (e.g. "Company Owner"). */
   roleName: string;
-  /** Platform-level superuser flag (cross-tenant, all-access). */
+  permissions: string[];
   isPlatformAdmin: boolean;
   isPortalUser: boolean;
-  /** Linked Employee.id for portal users; null for company admins. */
   employeeId: string | null;
+  onboardingStep: OnboardingStep | null;
+  onboardingCompletedAt: string | null;
+  fullName: string | null;
+  phone: string | null;
+  jobTitle: string | null;
+  planId: string | null;
+  subscriptionStatus: SubscriptionStatus | null;
 }
 
 @Injectable()
@@ -42,12 +51,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  /**
-   * Passport calls this with the decoded, signature-verified payload. The
-   * returned object becomes `request.user` and is the single source of truth
-   * for tenant scoping (`companyId`) and authorization (`roleName`,
-   * `isPlatformAdmin`) downstream.
-   */
   validate(payload: JwtPayload): AuthenticatedUser {
     return {
       userId: payload.sub,
@@ -55,9 +58,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       companyId: payload.companyId,
       roleId: payload.roleId,
       roleName: payload.roleName,
+      permissions: payload.permissions ?? [],
       isPlatformAdmin: payload.isPlatformAdmin,
       isPortalUser: payload.isPortalUser ?? false,
       employeeId: payload.employeeId ?? null,
+      onboardingStep: payload.onboardingStep ?? null,
+      onboardingCompletedAt: payload.onboardingCompletedAt ?? null,
+      fullName: null,
+      phone: null,
+      jobTitle: null,
+      planId: payload.planId ?? null,
+      subscriptionStatus: payload.subscriptionStatus ?? null,
     };
   }
 }

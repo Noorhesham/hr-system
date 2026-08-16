@@ -17,19 +17,20 @@ import { QueryShiftsDto } from './dto/query-shifts.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 
 @ApiTags('Shifts')
 @ApiBearerAuth()
 @Controller('shifts')
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
 export class ShiftController {
   constructor(private readonly shiftService: ShiftService) {}
 
   @Post()
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_SHIFTS)
   @ApiBody({
     type: CreateShiftDto,
     examples: {
@@ -68,7 +69,7 @@ export class ShiftController {
   }
 
   @Patch(':id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_SHIFTS)
   update(
     @Tenant() companyId: string,
     @Param('id') id: string,
@@ -78,7 +79,7 @@ export class ShiftController {
   }
 
   @Delete(':id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_SHIFTS)
   remove(@Tenant() companyId: string, @Param('id') id: string) {
     return this.shiftService.remove(companyId, id);
   }

@@ -37,6 +37,15 @@ let AuthController = class AuthController {
         this.authService.setRefreshTokenCookie(res, refreshToken);
         return { accessToken, user };
     }
+    forgotPassword(dto) {
+        return this.authService.forgotPassword(dto);
+    }
+    verifyResetOtp(dto) {
+        return this.authService.verifyResetOtp(dto);
+    }
+    resetPassword(dto) {
+        return this.authService.resetPassword(dto);
+    }
     async refresh(user, res) {
         const { accessToken, refreshToken } = await this.authService.refreshTokens(user);
         this.authService.setRefreshTokenCookie(res, refreshToken);
@@ -52,8 +61,11 @@ let AuthController = class AuthController {
         this.authService.setRefreshTokenCookie(res, refreshToken);
         return { accessToken };
     }
-    me(user) {
-        return user;
+    updateProfile(user, dto) {
+        return this.authService.updateProfile(user, dto);
+    }
+    me(userId) {
+        return this.authService.getMe(userId);
     }
 };
 exports.AuthController = AuthController;
@@ -90,7 +102,7 @@ __decorate([
         examples: {
             default: {
                 summary: 'Login',
-                value: { email: 'admin@acme.com', password: 'Passw0rd!' },
+                value: { email: 'owner@najd.sa', password: 'Owner@1234' },
             },
         },
     }),
@@ -101,6 +113,66 @@ __decorate([
     __metadata("design:paramtypes", [auth_dto_1.LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60_000 } }),
+    (0, swagger_1.ApiBody)({
+        type: auth_dto_1.ForgotPasswordDto,
+        examples: {
+            default: {
+                summary: 'Request OTP',
+                value: { email: 'owner@najd.sa' },
+            },
+        },
+    }),
+    openapi.ApiResponse({ status: common_1.HttpStatus.OK }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('verify-reset-otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60_000 } }),
+    (0, swagger_1.ApiBody)({
+        type: auth_dto_1.VerifyResetOtpDto,
+        examples: {
+            default: {
+                summary: 'Verify OTP',
+                value: { email: 'owner@najd.sa', code: '123456' },
+            },
+        },
+    }),
+    openapi.ApiResponse({ status: common_1.HttpStatus.OK }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.VerifyResetOtpDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "verifyResetOtp", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60_000 } }),
+    (0, swagger_1.ApiBody)({
+        type: auth_dto_1.ResetPasswordDto,
+        examples: {
+            default: {
+                summary: 'Reset password',
+                value: {
+                    resetToken: '<from verify-reset-otp>',
+                    newPassword: 'Owner@1234',
+                },
+            },
+        },
+    }),
+    openapi.ApiResponse({ status: common_1.HttpStatus.OK }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -148,13 +220,37 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "changePassword", null);
 __decorate([
+    (0, common_1.Patch)('profile'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBody)({
+        type: auth_dto_1.UpdateProfileDto,
+        examples: {
+            default: {
+                summary: 'Update profile',
+                value: {
+                    fullName: 'أحمد الحربي',
+                    phone: '0501234567',
+                    jobTitle: 'مدير الموارد البشرية',
+                },
+            },
+        },
+    }),
+    openapi.ApiResponse({ status: 200, type: Object }),
+    __param(0, (0, tenant_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, auth_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "updateProfile", null);
+__decorate([
     (0, common_1.Get)('me'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     openapi.ApiResponse({ status: 200, type: Object }),
-    __param(0, (0, tenant_decorator_1.CurrentUser)()),
+    __param(0, (0, tenant_decorator_1.CurrentUser)('userId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([

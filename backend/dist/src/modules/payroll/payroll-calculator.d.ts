@@ -8,6 +8,17 @@ export type AttendanceRow = {
     checkIn?: Date | null;
     checkOut?: Date | null;
 };
+export type OvertimeGrant = {
+    date: Date;
+    hours: Prisma.Decimal;
+};
+export type PaidOvertimeDay = {
+    date: Date;
+    hours: Prisma.Decimal;
+    clockHours: Prisma.Decimal;
+    requestHours: Prisma.Decimal;
+};
+export declare function resolvePaidOvertime(attendance: Pick<AttendanceRow, 'date' | 'overtimeHours'>[], approvedOvertime?: OvertimeGrant[]): PaidOvertimeDay[];
 export type SlipCalc = {
     basicSalary: Prisma.Decimal;
     totalAllowances: Prisma.Decimal;
@@ -30,6 +41,7 @@ export declare function calculateEmployeeSlip(input: {
     attendance: AttendanceRow[];
     policy: Pick<CompanyPolicy, 'delayDeductionType' | 'absenceMultiplierUnexcused' | 'absenceMultiplierExcused' | 'overtimeMultiplierNormal' | 'overtimeMultiplierHoliday' | 'gosiEmployeePercentage' | 'defaultWeekendDays'>;
     loanInstallmentAmounts: Prisma.Decimal[];
+    approvedOvertime?: OvertimeGrant[];
 }): SlipCalc;
 export declare function monthDateRange(year: number, month: number): {
     from: Date;

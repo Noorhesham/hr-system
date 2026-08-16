@@ -24,6 +24,7 @@ const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const tenant_decorator_1 = require("../tenant/decorators/tenant.decorator");
 const roles_constant_1 = require("../../common/constants/roles.constant");
 const page_options_dto_1 = require("../../common/pagination/page-options.dto");
+const create_loan_dto_1 = require("../loan/dto/create-loan.dto");
 let EssController = class EssController {
     essService;
     constructor(essService) {
@@ -31,6 +32,9 @@ let EssController = class EssController {
     }
     me(actor) {
         return this.essService.me(actor);
+    }
+    home(actor) {
+        return this.essService.home(actor);
     }
     salaryComponents(actor) {
         return this.essService.mySalaryComponents(actor);
@@ -43,6 +47,9 @@ let EssController = class EssController {
     }
     loans(actor) {
         return this.essService.myLoans(actor);
+    }
+    requestLoan(actor, dto) {
+        return this.essService.requestLoan(actor, dto.totalAmount);
     }
     payslips(actor, query) {
         return this.essService.myPayslips(actor, query);
@@ -60,6 +67,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], EssController.prototype, "me", null);
+__decorate([
+    (0, common_1.Get)('home'),
+    openapi.ApiResponse({ status: 200 }),
+    __param(0, (0, tenant_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], EssController.prototype, "home", null);
 __decorate([
     (0, common_1.Get)('salary-components'),
     openapi.ApiResponse({ status: 200 }),
@@ -93,6 +108,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], EssController.prototype, "loans", null);
+__decorate([
+    (0, common_1.Post)('loans'),
+    openapi.ApiResponse({ status: 201, type: Object }),
+    __param(0, (0, tenant_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_loan_dto_1.CreateLoanDto]),
+    __metadata("design:returntype", void 0)
+], EssController.prototype, "requestLoan", null);
 __decorate([
     (0, common_1.Get)('payslips'),
     openapi.ApiResponse({ status: 200 }),

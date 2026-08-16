@@ -15,6 +15,7 @@ const client_1 = require("@prisma/client");
 const database_service_1 = require("../../database/database.service");
 const page_dto_1 = require("../../common/pagination/page.dto");
 const page_meta_dto_1 = require("../../common/pagination/page-meta.dto");
+const attendance_time_util_1 = require("../../common/utils/attendance-time.util");
 const SORTABLE = ['createdAt', 'updatedAt', 'totalAmount'];
 let LoanService = class LoanService {
     db;
@@ -83,7 +84,7 @@ let LoanService = class LoanService {
         }
         const totalCents = loan.totalAmount.times(100).toNumber();
         const perCents = this.buildInstallmentCents(totalCents, dto.numberOfInstallments, dto.installmentAmount);
-        const start = new Date(dto.startDate);
+        const start = (0, attendance_time_util_1.parseDateOnly)(dto.startDate);
         const installmentsData = perCents.map((cents, i) => ({
             loanId: loan.id,
             amount: new client_1.Prisma.Decimal(cents).dividedBy(100),

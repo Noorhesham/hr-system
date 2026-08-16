@@ -5,22 +5,42 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  AttendanceStatus,
+  LeaveStatus,
   LoanInstallmentStatus,
   LoanStatus,
   PayrollCycleStatus,
   Prisma,
+  RequestStatus,
+  RequestType,
+  SalaryBasis,
 } from '@prisma/client';
 import { DatabaseService } from '../../database/database.service';
 import { PageDto } from '../../common/pagination/page.dto';
 import { PageMetaDto } from '../../common/pagination/page-meta.dto';
 import { CreatePayrollCycleDto } from './dto/create-payroll-cycle.dto';
 import { QueryPayrollCyclesDto } from './dto/query-payroll-cycles.dto';
+import { QueryPayrollSlipsDto } from './dto/query-payroll-slips.dto';
 import {
   calculateEmployeeSlip,
+  formatYmd,
   monthDateRange,
+  resolvePaidOvertime,
+  type OvertimeGrant,
 } from './payroll-calculator';
 
 const SORTABLE = ['createdAt', 'updatedAt', 'year', 'month'];
+
+function employeeCodeFromId(id: string): string {
+  const hex = id.replace(/-/g, '').slice(-4);
+  const n = (parseInt(hex, 16) % 9000) + 1000;
+  return `EMP-${n}`;
+}
+
+function decimalNum(v: Prisma.Decimal | number | null | undefined): number {
+  if (v == null) return 0;
+  return typeof v === 'number' ? v : Number(v);
+}
 
 @Injectable()
 export class PayrollService {
@@ -88,24 +108,126 @@ export class PayrollService {
     const cycle = await this.db.payrollCycle.findFirst({
       where: { id, companyId },
       include: {
-        payrollSlips: {
-          include: { employee: { select: { id: true, name: true } } },
-          orderBy: { employee: { name: 'asc' } },
-        },
         _count: { select: { payrollSlips: true, loanInstallments: true } },
       },
     });
     if (!cycle) {
       throw new NotFoundException('Payroll cycle not found');
     }
-    return cycle;
+    const sums = await this.db.payrollSlip.aggregate({
+      where: { payrollCycleId: id },
+      _sum: {
+        basicSalary: true,
+        totalAllowances: true,
+        overtimeBonus: true,
+        totalDeductions: true,
+        loanDeductions: true,
+        netSalary: true,
+      },
+    });
+    const basic = decimalNum(sums._sum.basicSalary);
+    const allowances = decimalNum(sums._sum.totalAllowances);
+    const bonuses = decimalNum(sums._sum.overtimeBonus);
+    const deductions =
+      decimalNum(sums._sum.totalDeductions) + decimalNum(sums._sum.loanDeductions);
+    return {
+      ...cycle,
+      totals: {
+        totalSalaries: basic + allowances,
+        totalAllowances: allowances,
+        totalBonuses: bonuses,
+        totalDeductions: deductions,
+        netSalaries: decimalNum(sums._sum.netSalary),
+      },
+    };
+  }
+
+  async listSlips(
+    companyId: string,
+    cycleId: string,
+    query: QueryPayrollSlipsDto,
+  ) {
+    await this.getOwnedOrThrow(companyId, cycleId);
+
+    const search = query.search?.trim();
+    const employeeFilter: Prisma.EmployeeWhereInput = {
+      ...(query.departmentId ? { departmentId: query.departmentId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { position: { contains: search, mode: 'insensitive' } },
+              { department: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+    const where: Prisma.PayrollSlipWhereInput = {
+      payrollCycleId: cycleId,
+      ...(query.departmentId || search ? { employee: employeeFilter } : {}),
+    };
+
+    const [rows, itemCount] = await Promise.all([
+      this.db.payrollSlip.findMany({
+        where,
+        orderBy: { employee: { name: 'asc' } },
+        skip: query.skip,
+        take: query.limit,
+        include: {
+          employee: {
+            select: {
+              id: true,
+              name: true,
+              photoUrl: true,
+              department: true,
+              departmentId: true,
+              user: { select: { email: true } },
+            },
+          },
+        },
+      }),
+      this.db.payrollSlip.count({ where }),
+    ]);
+
+    const data = rows.map((s) => ({
+      id: s.id,
+      employeeId: s.employeeId,
+      basicSalary: s.basicSalary,
+      totalAllowances: s.totalAllowances,
+      overtimeBonus: s.overtimeBonus,
+      totalDeductions: s.totalDeductions,
+      loanDeductions: s.loanDeductions,
+      netSalary: s.netSalary,
+      employee: {
+        id: s.employee.id,
+        name: s.employee.name,
+        photoUrl: s.employee.photoUrl,
+        department: s.employee.department,
+        departmentId: s.employee.departmentId,
+        email: s.employee.user?.email ?? null,
+        employeeCode: employeeCodeFromId(s.employee.id),
+      },
+    }));
+
+    return new PageDto(
+      data,
+      new PageMetaDto({ pageOptionsDto: query, itemCount }),
+    );
   }
 
   async findSlip(companyId: string, slipId: string) {
     const slip = await this.db.payrollSlip.findFirst({
       where: { id: slipId, payrollCycle: { companyId } },
       include: {
-        employee: { select: { id: true, name: true, isGosiRegistered: true } },
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            photoUrl: true,
+            isGosiRegistered: true,
+            user: { select: { email: true } },
+          },
+        },
         payrollCycle: {
           select: { id: true, month: true, year: true, status: true },
         },
@@ -114,7 +236,181 @@ export class PayrollService {
     if (!slip) {
       throw new NotFoundException('Payroll slip not found');
     }
-    return slip;
+
+    const policy = await this.db.companyPolicy.findUnique({
+      where: { companyId },
+    });
+    const { from, to } = monthDateRange(
+      slip.payrollCycle.year,
+      slip.payrollCycle.month,
+    );
+    const emp = await this.db.employee.findFirst({
+      where: { id: slip.employeeId, companyId },
+      include: {
+        salaryComponents: true,
+        attendanceRecords: { where: { date: { gte: from, lte: to } } },
+        loans: {
+          where: { status: LoanStatus.APPROVED },
+          include: {
+            installments: {
+              where: {
+                OR: [
+                  { payrollCycleId: slip.payrollCycleId },
+                  {
+                    status: LoanInstallmentStatus.PENDING,
+                    dueDate: { gte: from, lte: to },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const otGrants = await this.loadApprovedOvertime(
+      companyId,
+      [slip.employeeId],
+      from,
+      to,
+    );
+
+    const calc =
+      emp && policy
+        ? calculateEmployeeSlip({
+            basicSalary: emp.basicSalary,
+            salaryBasis: emp.salaryBasis,
+            isGosiRegistered: emp.isGosiRegistered,
+            components: emp.salaryComponents,
+            attendance: emp.attendanceRecords,
+            policy,
+            loanInstallmentAmounts: emp.loans.flatMap((l) =>
+              l.installments.map((i) => i.amount),
+            ),
+            approvedOvertime: otGrants,
+          })
+        : null;
+
+    const att = emp?.attendanceRecords ?? [];
+    const paidOt = resolvePaidOvertime(att, otGrants);
+    const overtimeHours = paidOt.reduce((sum, d) => sum + Number(d.hours), 0);
+    const hourRate = emp ? hourRateFor(emp.salaryBasis, Number(emp.basicSalary)) : 0;
+    const weekends = new Set(
+      (policy?.defaultWeekendDays ?? []).map((d) => d.toUpperCase()),
+    );
+    const weekdayNames = [
+      'SUNDAY',
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+    ];
+
+    const leaves = await this.db.leaveRequest.findMany({
+      where: {
+        employeeId: slip.employeeId,
+        status: LeaveStatus.APPROVED,
+        fromDate: { lte: to },
+        toDate: { gte: from },
+      },
+      orderBy: { fromDate: 'asc' },
+      select: {
+        id: true,
+        fromDate: true,
+        toDate: true,
+        reason: true,
+      },
+    });
+
+    return {
+      id: slip.id,
+      employeeId: slip.employeeId,
+      basicSalary: slip.basicSalary,
+      totalAllowances: slip.totalAllowances,
+      overtimeBonus: slip.overtimeBonus,
+      totalDeductions: slip.totalDeductions,
+      loanDeductions: slip.loanDeductions,
+      netSalary: slip.netSalary,
+      employee: {
+        id: slip.employee.id,
+        name: slip.employee.name,
+        photoUrl: slip.employee.photoUrl,
+        email: slip.employee.user?.email ?? null,
+        employeeCode: employeeCodeFromId(slip.employee.id),
+        isGosiRegistered: slip.employee.isGosiRegistered,
+      },
+      payrollCycle: slip.payrollCycle,
+      attendance: {
+        present: att.filter((r) => r.status === AttendanceStatus.PRESENT)
+          .length,
+        absent: att.filter((r) => r.status === AttendanceStatus.ABSENT).length,
+        leave: att.filter((r) => r.status === AttendanceStatus.LEAVE).length,
+        delayMinutes: att.reduce((sum, r) => sum + r.delayMinutes, 0),
+        overtimeHours,
+      },
+      attendanceDays: att
+        .slice()
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .map((r) => ({
+          date: formatYmd(r.date),
+          status: r.status,
+          delayMinutes: r.delayMinutes,
+          overtimeHours: Number(r.overtimeHours),
+        })),
+      overtimeDays: paidOt
+        .filter((d) => d.hours.greaterThan(0))
+        .map((d) => {
+          const isWeekend = weekends.has(weekdayNames[d.date.getUTCDay()]!);
+          const mult = Number(
+            isWeekend
+              ? (policy?.overtimeMultiplierHoliday ?? 2)
+              : (policy?.overtimeMultiplierNormal ?? 1.5),
+          );
+          const amount = Number(d.hours) * hourRate * mult;
+          const source =
+            d.requestHours.greaterThan(0) &&
+            d.requestHours.greaterThanOrEqualTo(d.clockHours)
+              ? 'REQUEST'
+              : 'CLOCK';
+          return {
+            date: formatYmd(d.date),
+            hours: Number(d.hours),
+            clockHours: Number(d.clockHours),
+            requestHours: Number(d.requestHours),
+            source,
+            amount: Number(amount.toFixed(2)),
+          };
+        }),
+      leaves: leaves.map((l) => ({
+        id: l.id,
+        fromDate: formatYmd(l.fromDate),
+        toDate: formatYmd(l.toDate),
+        reason: l.reason,
+      })),
+      loans: (emp?.loans ?? []).flatMap((loan) =>
+        loan.installments.map((i) => ({
+          amount: i.amount,
+          dueDate: formatYmd(i.dueDate),
+          status: i.status,
+        })),
+      ),
+      components: (emp?.salaryComponents ?? []).map((c) => ({
+        name: c.name,
+        type: c.type,
+        amount: c.amount,
+        isPercentage: c.isPercentage,
+      })),
+      breakdown: calc
+        ? {
+            componentDeductions: calc.breakdown.componentDeductions,
+            absenceDeduction: calc.breakdown.absenceDeduction,
+            delayDeduction: calc.breakdown.delayDeduction,
+            gosiEmployee: calc.breakdown.gosiEmployee,
+          }
+        : null,
+    };
   }
 
   /** Re-run calculation — only while DRAFT. */
@@ -129,6 +425,25 @@ export class PayrollService {
     await this.db.payrollSlip.deleteMany({ where: { payrollCycleId: id } });
     await this.runCalculation(companyId, id);
     return this.findOne(companyId, id);
+  }
+
+  /** REVIEW → DRAFT so HR can fix source data and recalculate. */
+  async revertToDraft(companyId: string, id: string) {
+    const cycle = await this.getOwnedOrThrow(companyId, id);
+    this.assertStatus(
+      cycle.status,
+      [PayrollCycleStatus.REVIEW],
+      'revert to draft',
+    );
+    await this.db.loanInstallment.updateMany({
+      where: { payrollCycleId: id, status: LoanInstallmentStatus.PENDING },
+      data: { payrollCycleId: null },
+    });
+    return this.db.payrollCycle.update({
+      where: { id },
+      data: { status: PayrollCycleStatus.DRAFT },
+      include: { _count: { select: { payrollSlips: true } } },
+    });
   }
 
   async moveToReview(companyId: string, id: string) {
@@ -184,11 +499,7 @@ export class PayrollService {
       return tx.payrollCycle.update({
         where: { id },
         data: { status: PayrollCycleStatus.APPROVED },
-        include: {
-          payrollSlips: {
-            include: { employee: { select: { id: true, name: true } } },
-          },
-        },
+        include: { _count: { select: { payrollSlips: true } } },
       });
     });
   }
@@ -292,6 +603,13 @@ export class PayrollService {
       );
     }
 
+    const otByEmp = await this.loadApprovedOvertimeGrouped(
+      companyId,
+      employees.map((e) => e.id),
+      from,
+      to,
+    );
+
     await this.db.$transaction(async (tx) => {
       for (const emp of employees) {
         const loanAmounts = emp.loans.flatMap((l) =>
@@ -309,6 +627,7 @@ export class PayrollService {
           attendance: emp.attendanceRecords,
           policy,
           loanInstallmentAmounts: loanAmounts,
+          approvedOvertime: otByEmp.get(emp.id) ?? [],
         });
 
         await tx.payrollSlip.create({
@@ -355,6 +674,61 @@ export class PayrollService {
     }
     return cycle;
   }
+
+  private async loadApprovedOvertime(
+    companyId: string,
+    employeeIds: string[],
+    from: Date,
+    to: Date,
+  ): Promise<OvertimeGrant[]> {
+    if (employeeIds.length === 0) return [];
+    const rows = await this.db.employeeRequest.findMany({
+      where: {
+        companyId,
+        employeeId: { in: employeeIds },
+        type: RequestType.OVERTIME,
+        status: RequestStatus.APPROVED,
+        date: { gte: from, lte: to },
+      },
+      select: { date: true, hours: true },
+    });
+    return rows
+      .filter((r): r is { date: Date; hours: Prisma.Decimal } => r.date != null && r.hours != null)
+      .map((r) => ({ date: r.date, hours: r.hours }));
+  }
+
+  private async loadApprovedOvertimeGrouped(
+    companyId: string,
+    employeeIds: string[],
+    from: Date,
+    to: Date,
+  ): Promise<Map<string, OvertimeGrant[]>> {
+    const map = new Map<string, OvertimeGrant[]>();
+    if (employeeIds.length === 0) return map;
+    const rows = await this.db.employeeRequest.findMany({
+      where: {
+        companyId,
+        employeeId: { in: employeeIds },
+        type: RequestType.OVERTIME,
+        status: RequestStatus.APPROVED,
+        date: { gte: from, lte: to },
+      },
+      select: { employeeId: true, date: true, hours: true },
+    });
+    for (const r of rows) {
+      if (!r.date || r.hours == null) continue;
+      const list = map.get(r.employeeId) ?? [];
+      list.push({ date: r.date, hours: r.hours });
+      map.set(r.employeeId, list);
+    }
+    return map;
+  }
+}
+
+function hourRateFor(basis: SalaryBasis, basic: number): number {
+  if (basis === SalaryBasis.HOURLY) return basic;
+  if (basis === SalaryBasis.DAILY) return basic / 8;
+  return basic / 30 / 8;
 }
 
 function csvEscape(value: string): string {

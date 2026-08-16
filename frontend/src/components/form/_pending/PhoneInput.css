@@ -1,0 +1,138 @@
+/* Phone Input Component Styles - Adjusted to match FormInput */
+.phone-input-container {
+  width: 100%;
+  position: relative;
+}
+
+.phone-input-container .react-tel-input {
+  width: 100%;
+  font-family: inherit;
+}
+
+.phone-input-container .react-tel-input input {
+  width: 100% !important;
+  height: 48px !important;
+  padding: 0 12px 0 52px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 62px !important;
+  font-size: 0.875rem !important;
+  background-color: rgba(249, 250, 251, 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+  outline: none !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+[dir="rtl"] .phone-input-container .react-tel-input input {
+  padding: 0 52px 0 12px !important;
+  text-align: right !important;
+}
+
+.phone-input-container .react-tel-input input:focus {
+  background-color: hsl(var(--background)) !important;
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 1px hsl(var(--primary)) !important;
+}
+
+.phone-input-container .react-tel-input .flag-dropdown {
+  background-color: transparent !important;
+  border: none !important;
+  width: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+}
+
+[dir="ltr"] .phone-input-container .react-tel-input .flag-dropdown {
+  left: 0 !important;
+}
+
+[dir="rtl"] .phone-input-container .react-tel-input .flag-dropdown {
+  right: 0 !important;
+}
+
+.phone-input-container .react-tel-input .selected-flag {
+  background-color: transparent !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.75rem !important;
+}
+
+.phone-input-container .react-tel-input .country-list {
+  background-color: #ffffff !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  margin-top: 4px !important;
+  padding: 8px !important;
+  width: 300px !important;
+  z-index: 50 !important;
+  position: absolute !important;
+  top: 48px !important;
+}
+
+[dir="ltr"] .phone-input-container .react-tel-input .country-list {
+  left: 0 !important;
+}
+
+[dir="rtl"] .phone-input-container .react-tel-input .country-list {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.phone-input-container .react-tel-input .country-list .country {
+  padding: 10px 12px !important;
+  border-radius: 0.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+}
+
+[dir="rtl"] .phone-input-container .react-tel-input .country-list .country {
+  flex-direction: row-reverse !important;
+  text-align: right !important;
+}
+
+.phone-input-container .react-tel-input .country-list .country:hover {
+  background-color: hsl(var(--primary)/0.05) !important;
+}
+
+.phone-input-container .react-tel-input .country-list .country.highlight {
+  background-color: hsl(var(--primary)/0.1) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.phone-input-container .react-tel-input .country-list .flag {
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.phone-input-container .react-tel-input .country-list .dial-code {
+  color: hsl(var(--muted-foreground)) !important;
+  font-weight: 600 !important;
+}
+
+[dir="ltr"] .phone-input-container .react-tel-input .country-list .dial-code {
+  margin-left: auto !important;
+}
+
+[dir="rtl"] .phone-input-container .react-tel-input .country-list .dial-code {
+  margin-right: auto !important;
+}
+
+.phone-input-container .react-tel-input .selected-flag .arrow {
+  display: none !important;
+}
+
+.phone-input-container .react-tel-input input:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}

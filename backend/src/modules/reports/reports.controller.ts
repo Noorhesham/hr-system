@@ -2,25 +2,30 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { QueryMonthDto } from './dto/query-month.dto';
+import { QueryDashboardDto } from './dto/query-dashboard.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
 @Controller('reports')
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
-@Roles(COMPANY_OWNER_ROLE)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
+@Permissions(PERMISSIONS.VIEW_REPORTS)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  /** Executive KPIs for the tenant. */
+  /** Executive KPIs for the tenant (optional from/to; defaults last→current month). */
   @Get('dashboard')
-  dashboard(@Tenant() companyId: string) {
-    return this.reportsService.dashboard(companyId);
+  dashboard(
+    @Tenant() companyId: string,
+    @Query() query: QueryDashboardDto,
+  ) {
+    return this.reportsService.dashboard(companyId, query);
   }
 
   @Get('payroll-summary')

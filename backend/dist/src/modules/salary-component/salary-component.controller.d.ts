@@ -6,33 +6,33 @@ export declare class SalaryComponentController {
     constructor(salaryComponentService: SalaryComponentService);
     create(companyId: string, employeeId: string, dto: CreateSalaryComponentDto): Promise<{
         id: string;
+        type: import("@prisma/client").$Enums.SalaryComponentType;
+        name: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        isPercentage: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        isPercentage: boolean;
         employeeId: string;
-        type: import("@prisma/client").$Enums.SalaryComponentType;
-        amount: import("@prisma/client/runtime/library").Decimal;
     }>;
     findAll(companyId: string, employeeId: string): Promise<{
         id: string;
+        type: import("@prisma/client").$Enums.SalaryComponentType;
+        name: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        isPercentage: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        isPercentage: boolean;
         employeeId: string;
-        type: import("@prisma/client").$Enums.SalaryComponentType;
-        amount: import("@prisma/client/runtime/library").Decimal;
     }[]>;
     update(companyId: string, id: string, dto: UpdateSalaryComponentDto): Promise<{
         id: string;
+        type: import("@prisma/client").$Enums.SalaryComponentType;
+        name: string;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        isPercentage: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        isPercentage: boolean;
         employeeId: string;
-        type: import("@prisma/client").$Enums.SalaryComponentType;
-        amount: import("@prisma/client/runtime/library").Decimal;
     }>;
     remove(companyId: string, id: string): Promise<{
         success: boolean;

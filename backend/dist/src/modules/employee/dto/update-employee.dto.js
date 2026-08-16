@@ -23,8 +23,16 @@ class UpdateEmployeeDto {
     isActive;
     isGosiRegistered;
     gosiNumber;
+    departmentId;
+    department;
+    position;
+    managerId;
+    jobRank;
+    workLocation;
+    contractDurationYears;
+    phone;
     static _OPENAPI_METADATA_FACTORY() {
-        return { name: { required: false, type: () => String, maxLength: 120 }, basicSalary: { required: false, type: () => Number, minimum: 0 }, employmentType: { required: false, enum: ["PERMANENT", "TEMPORARY", "CONTRACT", "PROBATION"] }, salaryBasis: { required: false, enum: ["MONTHLY", "DAILY", "HOURLY"] }, shiftId: { required: false, type: () => String }, isActive: { required: false, type: () => Boolean }, isGosiRegistered: { required: false, type: () => Boolean }, gosiNumber: { required: false, type: () => String, maxLength: 50 } };
+        return { name: { required: false, type: () => String, maxLength: 120 }, basicSalary: { required: false, type: () => Number, minimum: 0 }, employmentType: { required: false, enum: ["PERMANENT", "TEMPORARY", "CONTRACT", "PROBATION"] }, salaryBasis: { required: false, enum: ["MONTHLY", "DAILY", "HOURLY"] }, shiftId: { required: false, type: () => String, nullable: true }, isActive: { required: false, type: () => Boolean }, isGosiRegistered: { required: false, type: () => Boolean }, gosiNumber: { required: false, type: () => String, maxLength: 50 }, departmentId: { required: false, type: () => String, nullable: true, format: "uuid" }, department: { required: false, type: () => String, maxLength: 120 }, position: { required: false, type: () => String, maxLength: 120 }, managerId: { required: false, type: () => String, nullable: true, format: "uuid" }, jobRank: { required: false, enum: ["EMPLOYEE", "TEAM_LEAD", "DEPARTMENT_MANAGER"] }, workLocation: { required: false, enum: ["HEADQUARTERS", "REMOTE", "BRANCH"] }, contractDurationYears: { required: false, type: () => Number, nullable: true, minimum: 0 }, phone: { required: false, type: () => String, nullable: true, maxLength: 30 } };
     }
 }
 exports.UpdateEmployeeDto = UpdateEmployeeDto;
@@ -55,10 +63,15 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateEmployeeDto.prototype, "salaryBasis", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ format: 'uuid' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        format: 'uuid',
+        nullable: true,
+        description: 'Clear with null.',
+    }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UpdateEmployeeDto.prototype, "shiftId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
@@ -82,4 +95,80 @@ __decorate([
     (0, class_validator_1.MaxLength)(50),
     __metadata("design:type", String)
 ], UpdateEmployeeDto.prototype, "gosiNumber", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        format: 'uuid',
+        nullable: true,
+        description: 'Tenant department id. Null clears.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", Object)
+], UpdateEmployeeDto.prototype, "departmentId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'الهندسة',
+        maxLength: 120,
+        deprecated: true,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "department", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'مهندس برمجيات', maxLength: 120 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "position", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        format: 'uuid',
+        nullable: true,
+        description: 'Direct manager employee id (same company). Null clears.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", Object)
+], UpdateEmployeeDto.prototype, "managerId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: client_1.JobRank }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.JobRank),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "jobRank", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: client_1.WorkLocation }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.WorkLocation),
+    __metadata("design:type", String)
+], UpdateEmployeeDto.prototype, "workLocation", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 1,
+        minimum: 0,
+        description: 'Contract length in years.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 1 }),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Object)
+], UpdateEmployeeDto.prototype, "contractDurationYears", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '501234567',
+        maxLength: 30,
+        nullable: true,
+        description: 'Updates linked portal User.phone when present. Null clears.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(30),
+    __metadata("design:type", Object)
+], UpdateEmployeeDto.prototype, "phone", void 0);
 //# sourceMappingURL=update-employee.dto.js.map

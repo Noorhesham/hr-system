@@ -1,1 +1,8 @@
 /backend/node_modules
+
+# secrets — never commit real env files
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example

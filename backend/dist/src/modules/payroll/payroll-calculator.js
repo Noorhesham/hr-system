@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formatYmd = void 0;
+exports.resolvePaidOvertime = resolvePaidOvertime;
 exports.calculateEmployeeSlip = calculateEmployeeSlip;
 exports.monthDateRange = monthDateRange;
 exports.formatMonthLabel = formatMonthLabel;
@@ -11,6 +12,39 @@ const D = (n) => new client_1.Prisma.Decimal(n);
 const ZERO = D(0);
 const DAYS_IN_MONTH = 30;
 const HOURS_PER_DAY = 8;
+function ymdKey(date) {
+    return (0, attendance_time_util_1.formatYmd)(date);
+}
+function resolvePaidOvertime(attendance, approvedOvertime = []) {
+    const map = new Map();
+    for (const row of attendance) {
+        const key = ymdKey(row.date);
+        map.set(key, {
+            date: row.date,
+            hours: D(row.overtimeHours),
+            clockHours: D(row.overtimeHours),
+            requestHours: ZERO,
+        });
+    }
+    for (const req of approvedOvertime) {
+        const key = ymdKey(req.date);
+        const hours = D(req.hours);
+        const existing = map.get(key);
+        if (existing) {
+            existing.requestHours = hours;
+            existing.hours = client_1.Prisma.Decimal.max(existing.clockHours, hours);
+        }
+        else {
+            map.set(key, {
+                date: req.date,
+                hours,
+                clockHours: ZERO,
+                requestHours: hours,
+            });
+        }
+    }
+    return [...map.values()].sort((a, b) => a.date.getTime() - b.date.getTime());
+}
 function money(d) {
     return d.toDecimalPlaces(2, client_1.Prisma.Decimal.ROUND_HALF_UP);
 }
@@ -88,14 +122,15 @@ function calculateEmployeeSlip(input) {
             delayMinutesTotal += row.delayMinutes;
             lateDays += 1;
         }
-        const otHours = D(row.overtimeHours);
-        if (otHours.greaterThan(0)) {
-            const isWeekend = weekends.has(weekdayNameUtc(row.date));
-            const mult = isWeekend
-                ? input.policy.overtimeMultiplierHoliday
-                : input.policy.overtimeMultiplierNormal;
-            overtimeBonus = overtimeBonus.plus(otHours.times(hourRate).times(mult));
-        }
+    }
+    for (const day of resolvePaidOvertime(input.attendance, input.approvedOvertime)) {
+        if (!day.hours.greaterThan(0))
+            continue;
+        const isWeekend = weekends.has(weekdayNameUtc(day.date));
+        const mult = isWeekend
+            ? input.policy.overtimeMultiplierHoliday
+            : input.policy.overtimeMultiplierNormal;
+        overtimeBonus = overtimeBonus.plus(day.hours.times(hourRate).times(mult));
     }
     if (basis === client_1.SalaryBasis.MONTHLY) {
         earnedBasic = contractBasic;

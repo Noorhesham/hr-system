@@ -17,8 +17,12 @@ const class_validator_1 = require("class-validator");
 const page_options_dto_1 = require("../../../common/pagination/page-options.dto");
 class QueryEmployeesDto extends page_options_dto_1.PageOptionsDto {
     isActive;
+    departmentId;
+    department;
+    accountStatus;
+    managersOnly;
     static _OPENAPI_METADATA_FACTORY() {
-        return { isActive: { required: false, type: () => Boolean } };
+        return { isActive: { required: false, type: () => Boolean }, departmentId: { required: false, type: () => String, format: "uuid" }, department: { required: false, type: () => String }, accountStatus: { required: false, enum: ["ACTIVE", "INACTIVE", "ON_LEAVE"], enum: ['ACTIVE', 'INACTIVE', 'ON_LEAVE'] }, managersOnly: { required: false, type: () => Boolean } };
     }
 }
 exports.QueryEmployeesDto = QueryEmployeesDto;
@@ -32,4 +36,40 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], QueryEmployeesDto.prototype, "isActive", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        format: 'uuid',
+        description: 'Filter by department id',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], QueryEmployeesDto.prototype, "departmentId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Filter by department label (exact match) — prefer departmentId',
+        example: 'الهندسة',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], QueryEmployeesDto.prototype, "department", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Account status filter: ACTIVE | INACTIVE | ON_LEAVE (approved leave covering today)',
+        enum: ['ACTIVE', 'INACTIVE', 'ON_LEAVE'],
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['ACTIVE', 'INACTIVE', 'ON_LEAVE']),
+    __metadata("design:type", String)
+], QueryEmployeesDto.prototype, "accountStatus", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Only employees eligible as direct managers: jobRank TEAM_LEAD / DEPARTMENT_MANAGER, or linked Company Owner user',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === 'true' || value === true),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], QueryEmployeesDto.prototype, "managersOnly", void 0);
 //# sourceMappingURL=query-employees.dto.js.map

@@ -49,12 +49,17 @@ export class RefreshTokenStrategy extends PassportStrategy(
     const user = await this.db.user.findUnique({
       where: { id: payload.sub },
       include: {
-        role: { select: { name: true } },
+        role: {
+          select: {
+            name: true,
+            permissions: { select: { action: true } },
+          },
+        },
         employee: { select: { id: true } },
+        company: { select: { planId: true, subscriptionStatus: true } },
       },
     });
     if (!user || !user.refreshTokenHash) {
-      // No stored hash => the session was revoked (logout) or never existed.
       throw new UnauthorizedException('Refresh token has been revoked');
     }
 
@@ -69,9 +74,19 @@ export class RefreshTokenStrategy extends PassportStrategy(
       companyId: user.companyId,
       roleId: user.roleId,
       roleName: user.role.name,
+      permissions: user.role.permissions.map((p) => p.action),
       isPlatformAdmin: user.isPlatformAdmin,
       isPortalUser: user.isPortalUser,
       employeeId: user.employee?.id ?? null,
+      onboardingStep: user.onboardingStep ?? null,
+      onboardingCompletedAt: user.onboardingCompletedAt
+        ? user.onboardingCompletedAt.toISOString()
+        : null,
+      fullName: user.fullName ?? null,
+      phone: user.phone ?? null,
+      jobTitle: user.jobTitle ?? null,
+      planId: user.company?.planId ?? null,
+      subscriptionStatus: user.company?.subscriptionStatus ?? null,
     };
   }
 }

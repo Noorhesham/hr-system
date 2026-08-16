@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 /** Correct a record. `employeeId`/`date` are immutable (they form the unique key). */
@@ -17,15 +18,25 @@ export class UpdateAttendanceDto {
   @IsString()
   shiftId?: string;
 
-  @ApiPropertyOptional({ example: '2026-06-29T08:05:00+03:00' })
+  @ApiPropertyOptional({
+    example: '2026-06-29T08:05:00+03:00',
+    nullable: true,
+    description: 'Pass null to clear check-in (required when marking ABSENT/LEAVE).',
+  })
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsDateString()
-  checkIn?: string;
+  checkIn?: string | null;
 
-  @ApiPropertyOptional({ example: '2026-06-29T17:30:00+03:00' })
+  @ApiPropertyOptional({
+    example: '2026-06-29T17:30:00+03:00',
+    nullable: true,
+    description: 'Pass null to clear check-out (required when marking ABSENT/LEAVE).',
+  })
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsDateString()
-  checkOut?: string;
+  checkOut?: string | null;
 
   @ApiPropertyOptional({ enum: AttendanceStatus })
   @IsOptional()

@@ -21,15 +21,16 @@ import { QueryAttendanceDto } from './dto/query-attendance.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { CurrentUser, Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
 
 @ApiTags('Attendance')
 @ApiBearerAuth()
 @Controller('attendance')
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
@@ -92,7 +93,7 @@ export class AttendanceController {
 
   /** Manual create/upsert of a day's record (Company Owner only). */
   @Post()
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_ATTENDANCE)
   @ApiBody({
     type: UpsertAttendanceDto,
     examples: {
@@ -117,7 +118,7 @@ export class AttendanceController {
 
   /** Bulk import (JSON); per-row partial success (Company Owner only). */
   @Post('bulk')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_ATTENDANCE)
   @ApiBody({
     type: BulkAttendanceDto,
     examples: {
@@ -166,7 +167,7 @@ export class AttendanceController {
 
   /** Correct a record; recomputes metrics (Company Owner only). */
   @Patch(':id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_ATTENDANCE)
   update(
     @Tenant() companyId: string,
     @Param('id') id: string,

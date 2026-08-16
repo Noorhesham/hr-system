@@ -146,8 +146,16 @@ let AttendanceService = class AttendanceService {
     async update(companyId, id, dto) {
         const existing = await this.getOwnedOrThrow(companyId, id);
         const tz = (0, time_constant_1.getDefaultTz)();
-        const checkIn = dto.checkIn !== undefined ? new Date(dto.checkIn) : existing.checkIn;
-        const checkOut = dto.checkOut !== undefined ? new Date(dto.checkOut) : existing.checkOut;
+        const checkIn = dto.checkIn !== undefined
+            ? dto.checkIn
+                ? new Date(dto.checkIn)
+                : null
+            : existing.checkIn;
+        const checkOut = dto.checkOut !== undefined
+            ? dto.checkOut
+                ? new Date(dto.checkOut)
+                : null
+            : existing.checkOut;
         const shiftId = dto.shiftId !== undefined ? dto.shiftId : existing.shiftId;
         const status = dto.status ?? existing.status;
         this.assertStatusConsistency(status, checkIn, checkOut);
@@ -187,11 +195,20 @@ let AttendanceService = class AttendanceService {
                 }
                 : {}),
         };
-        const orderBy = SORTABLE.includes(query.orderBy) ? query.orderBy : 'date';
+        const requested = SORTABLE.includes(query.orderBy) ? query.orderBy : 'date';
+        const primary = requested === 'createdAt' ? 'date' : requested;
+        const dir = query.prismaOrder;
+        const orderBy = primary === 'date'
+            ? [{ date: dir }, { updatedAt: dir }]
+            : [
+                {
+                    [primary]: dir,
+                },
+            ];
         const [data, itemCount] = await Promise.all([
             this.db.attendanceRecord.findMany({
                 where,
-                orderBy: { [orderBy]: query.prismaOrder },
+                orderBy,
                 skip: query.skip,
                 take: query.limit,
                 include: { employee: { select: { id: true, name: true } } },

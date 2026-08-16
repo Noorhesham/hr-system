@@ -1,14 +1,59 @@
 import { ReportsService } from './reports.service';
 import { QueryMonthDto } from './dto/query-month.dto';
+import { QueryDashboardDto } from './dto/query-dashboard.dto';
 export declare class ReportsController {
     private readonly reportsService;
     constructor(reportsService: ReportsService);
-    dashboard(companyId: string): Promise<{
-        activeEmployees: number;
-        inactiveEmployees: number;
+    dashboard(companyId: string, query: QueryDashboardDto): Promise<{
+        period: {
+            from: string;
+            to: string;
+            fromMonth: number;
+            fromYear: number;
+            toMonth: number;
+            toYear: number;
+            fromLabel: string;
+            toLabel: string;
+        };
+        totalEmployees: number;
+        employeesDeltaMonth: number;
+        attendanceRate: number;
+        attendanceRateDeltaWeek: number;
+        currentCyclePayroll: number;
+        payrollDeltaPct: number;
+        currentCycleLabel: string | null;
+        previousCycleLabel: string | null;
+        pendingLeaveRequests: number;
+        pendingLeaveRequestsDelta: number;
         openLoans: number;
-        openPayrollCycles: number;
         pendingLoanInstallments: number;
+        employeesByDepartment: {
+            department: string;
+            count: number;
+        }[];
+        salarySummary: {
+            month: number;
+            year: number;
+            label: string;
+            gross: number;
+            net: number;
+        }[];
+        attendanceToday: {
+            total: number;
+            checkedIn: number;
+            onTime: number;
+            late: number;
+            absent: number;
+            onTimeRate: number;
+        };
+        recentLeaveRequests: {
+            id: string;
+            employeeName: string;
+            position: string | null;
+            status: import("@prisma/client").$Enums.LeaveStatus;
+            fromDate: string;
+            toDate: string;
+        }[];
     }>;
     payrollSummary(companyId: string, q: QueryMonthDto): Promise<{
         cycle: {

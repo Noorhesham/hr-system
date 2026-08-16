@@ -28,9 +28,17 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             companyId: payload.companyId,
             roleId: payload.roleId,
             roleName: payload.roleName,
+            permissions: payload.permissions ?? [],
             isPlatformAdmin: payload.isPlatformAdmin,
             isPortalUser: payload.isPortalUser ?? false,
             employeeId: payload.employeeId ?? null,
+            onboardingStep: payload.onboardingStep ?? null,
+            onboardingCompletedAt: payload.onboardingCompletedAt ?? null,
+            fullName: null,
+            phone: null,
+            jobTitle: null,
+            planId: payload.planId ?? null,
+            subscriptionStatus: payload.subscriptionStatus ?? null,
         };
     }
 };

@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcrypt"));
+const seed_najaz_demo_1 = require("./seed-najaz-demo");
 const prisma = new client_1.PrismaClient({
     datasourceUrl: process.env.DATABASE_URL,
 });
@@ -70,7 +71,44 @@ const PERMISSIONS = [
     'MANAGE_DOCUMENTS',
     'VIEW_REPORTS',
     'MANAGE_COMPANY_POLICY',
+    'MANAGE_LEAVES',
+    'APPROVE_LEAVES',
+    'MANAGE_REQUESTS',
+    'APPROVE_REQUESTS',
+    'MANAGE_ROLES',
+    'VIEW_ROLES',
+    'MANAGE_DEPARTMENTS',
 ];
+const SYSTEM_ROLE_PERMISSIONS = {
+    HR: [
+        'CREATE_EMPLOYEE',
+        'UPDATE_EMPLOYEE',
+        'VIEW_EMPLOYEE',
+        'MANAGE_ATTENDANCE',
+        'MANAGE_LOANS',
+        'MANAGE_SHIFTS',
+        'MANAGE_DOCUMENTS',
+        'MANAGE_LEAVES',
+        'APPROVE_LEAVES',
+        'MANAGE_REQUESTS',
+        'APPROVE_REQUESTS',
+        'MANAGE_DEPARTMENTS',
+        'VIEW_REPORTS',
+        'VIEW_ROLES',
+    ],
+    Manager: [
+        'VIEW_EMPLOYEE',
+        'APPROVE_LEAVES',
+        'APPROVE_REQUESTS',
+        'MANAGE_ATTENDANCE',
+    ],
+    Payroll: [
+        'VIEW_EMPLOYEE',
+        'MANAGE_PAYROLL',
+        'VIEW_REPORTS',
+        'MANAGE_LOANS',
+    ],
+};
 async function waitForDb(retries = 15, delayMs = 3000) {
     for (let i = 1; i <= retries; i++) {
         try {
@@ -110,9 +148,9 @@ async function seedPermissions() {
 }
 async function seedPlans() {
     const plans = [
-        { name: 'Basic', maxEmployees: 25, monthlyPrice: new client_1.Prisma.Decimal('299.00') },
-        { name: 'Pro', maxEmployees: 100, monthlyPrice: new client_1.Prisma.Decimal('799.00') },
-        { name: 'Enterprise', maxEmployees: 1000, monthlyPrice: new client_1.Prisma.Decimal('2499.00') },
+        { name: 'Basic', maxEmployees: 25, monthlyPrice: new client_1.Prisma.Decimal('399.00') },
+        { name: 'Pro', maxEmployees: 300, monthlyPrice: new client_1.Prisma.Decimal('899.00') },
+        { name: 'Enterprise', maxEmployees: 999999, monthlyPrice: new client_1.Prisma.Decimal('2499.00') },
     ];
     const out = {};
     for (const p of plans) {
@@ -175,7 +213,10 @@ async function seedPlatformAdmin() {
     return admin;
 }
 async function ensureOwnerRole(companyId) {
-    const permissions = await prisma.permission.findMany({ select: { id: true } });
+    const permissions = await prisma.permission.findMany({
+        select: { id: true, action: true },
+    });
+    const byAction = new Map(permissions.map((p) => [p.action, p.id]));
     const role = await prisma.role.upsert({
         where: { companyId_name: { companyId, name: OWNER_ROLE } },
         update: {},
@@ -189,6 +230,29 @@ async function ensureOwnerRole(companyId) {
         where: { id: role.id },
         data: { permissions: { set: permissions.map((p) => ({ id: p.id })) } },
     });
+    await prisma.role.upsert({
+        where: { companyId_name: { companyId, name: EMPLOYEE_ROLE } },
+        update: {},
+        create: { companyId, name: EMPLOYEE_ROLE },
+    });
+    for (const [name, actions] of Object.entries(SYSTEM_ROLE_PERMISSIONS)) {
+        const ids = actions
+            .map((a) => byAction.get(a))
+            .filter((id) => Boolean(id));
+        const r = await prisma.role.upsert({
+            where: { companyId_name: { companyId, name } },
+            update: {},
+            create: {
+                companyId,
+                name,
+                permissions: { connect: ids.map((id) => ({ id })) },
+            },
+        });
+        await prisma.role.update({
+            where: { id: r.id },
+            data: { permissions: { set: ids.map((id) => ({ id })) } },
+        });
+    }
     return role;
 }
 async function ensureEmployeeRole(companyId) {
@@ -726,12 +790,15 @@ async function main() {
     const shifts = await seedShifts(najd.company.id);
     const emps = await seedEmployees(najd.company.id, shifts, NAJD_EMPLOYEES);
     await seedDocuments(emps);
-    const { year, month } = await seedAttendance(najd.company.id, emps, shifts);
-    await seedLoan(emps.ahmed.id, year, month);
+    const attendancePeriod = await seedAttendance(najd.company.id, emps, shifts);
+    await seedLoan(emps.ahmed.id, attendancePeriod.year, attendancePeriod.month);
     await seedRedSeaMinimal(plans.Basic);
+    await (0, seed_najaz_demo_1.seedNajazDemo)(prisma, plans.Pro);
     console.log('\n══════════════════════════════════════════════════');
     console.log('  LOGIN CREDENTIALS');
     console.log('══════════════════════════════════════════════════');
+    console.log('  نجاز demo dashboard (rich data)');
+    console.log(`    ${seed_najaz_demo_1.NAJAZ_DEMO.email} / ${seed_najaz_demo_1.NAJAZ_DEMO.password}`);
     console.log('  Platform admin');
     console.log(`    ${PLATFORM.email} / ${PLATFORM.password}`);
     console.log('  Najd Trading — Company Owner');
@@ -746,8 +813,7 @@ async function main() {
     console.log('    yousef@redsea.sa / Emp@12345');
     console.log('══════════════════════════════════════════════════');
     console.log('  Suggested next API calls:');
-    console.log('    POST /auth/login  → owner@najd.sa');
-    console.log(`    POST /payroll/cycles { "month": ${month}, "year": ${year} }`);
+    console.log(`    POST /auth/login  → ${seed_najaz_demo_1.NAJAZ_DEMO.email}`);
     console.log('    GET  /reports/dashboard');
     console.log('══════════════════════════════════════════════════\n');
 }

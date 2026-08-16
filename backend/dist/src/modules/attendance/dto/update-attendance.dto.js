@@ -22,7 +22,7 @@ class UpdateAttendanceDto {
     delayMinutes;
     overtimeHours;
     static _OPENAPI_METADATA_FACTORY() {
-        return { shiftId: { required: false, type: () => String }, checkIn: { required: false, type: () => String }, checkOut: { required: false, type: () => String }, status: { required: false, enum: ["PRESENT", "ABSENT", "LEAVE"] }, delayMinutes: { required: false, type: () => Number, minimum: 0 }, overtimeHours: { required: false, type: () => Number, minimum: 0 } };
+        return { shiftId: { required: false, type: () => String }, checkIn: { required: false, type: () => String, nullable: true }, checkOut: { required: false, type: () => String, nullable: true }, status: { required: false, enum: ["PRESENT", "ABSENT", "LEAVE"] }, delayMinutes: { required: false, type: () => Number, minimum: 0 }, overtimeHours: { required: false, type: () => Number, minimum: 0 } };
     }
 }
 exports.UpdateAttendanceDto = UpdateAttendanceDto;
@@ -33,16 +33,26 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateAttendanceDto.prototype, "shiftId", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: '2026-06-29T08:05:00+03:00' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '2026-06-29T08:05:00+03:00',
+        nullable: true,
+        description: 'Pass null to clear check-in (required when marking ABSENT/LEAVE).',
+    }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
     (0, class_validator_1.IsDateString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UpdateAttendanceDto.prototype, "checkIn", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: '2026-06-29T17:30:00+03:00' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '2026-06-29T17:30:00+03:00',
+        nullable: true,
+        description: 'Pass null to clear check-out (required when marking ABSENT/LEAVE).',
+    }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((_, v) => v !== null && v !== undefined),
     (0, class_validator_1.IsDateString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], UpdateAttendanceDto.prototype, "checkOut", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ enum: client_1.AttendanceStatus }),

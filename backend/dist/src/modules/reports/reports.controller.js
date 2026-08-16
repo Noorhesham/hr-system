@@ -18,19 +18,21 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const reports_service_1 = require("./reports.service");
 const query_month_dto_1 = require("./dto/query-month.dto");
+const query_dashboard_dto_1 = require("./dto/query-dashboard.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const tenant_guard_1 = require("../tenant/guards/tenant.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
-const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const permissions_guard_1 = require("../../common/guards/permissions.guard");
+const permissions_decorator_1 = require("../../common/decorators/permissions.decorator");
+const permissions_constant_1 = require("../../common/constants/permissions.constant");
 const tenant_decorator_1 = require("../tenant/decorators/tenant.decorator");
-const roles_constant_1 = require("../../common/constants/roles.constant");
 let ReportsController = class ReportsController {
     reportsService;
     constructor(reportsService) {
         this.reportsService = reportsService;
     }
-    dashboard(companyId) {
-        return this.reportsService.dashboard(companyId);
+    dashboard(companyId, query) {
+        return this.reportsService.dashboard(companyId, query);
     }
     payrollSummary(companyId, q) {
         return this.reportsService.payrollSummary(companyId, q);
@@ -47,8 +49,9 @@ __decorate([
     (0, common_1.Get)('dashboard'),
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, tenant_decorator_1.Tenant)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, query_dashboard_dto_1.QueryDashboardDto]),
     __metadata("design:returntype", void 0)
 ], ReportsController.prototype, "dashboard", null);
 __decorate([
@@ -82,8 +85,8 @@ exports.ReportsController = ReportsController = __decorate([
     (0, swagger_1.ApiTags)('Reports'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('reports'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(roles_constant_1.COMPANY_OWNER_ROLE),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.VIEW_REPORTS),
     __metadata("design:paramtypes", [reports_service_1.ReportsService])
 ], ReportsController);
 //# sourceMappingURL=reports.controller.js.map

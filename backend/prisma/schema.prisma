@@ -55,6 +55,30 @@ enum SalaryBasis {
   HOURLY
 }
 
+/// Org rank used for permissions / promotion flows (edit employee UI).
+enum JobRank {
+  EMPLOYEE
+  TEAM_LEAD
+  DEPARTMENT_MANAGER
+}
+
+/// Where the employee primarily works.
+enum WorkLocation {
+  HEADQUARTERS
+  REMOTE
+  BRANCH
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+}
+
 /// Whether a recurring salary component adds to or subtracts from pay.
 //this is an array that adds up to hte base salary of the employee 
 enum SalaryComponentType {
@@ -86,6 +110,26 @@ enum LoanStatus {
   PAID_OFF
 }
 
+/// Employee self-service / admin request kinds (leave stays on LeaveRequest).
+enum RequestType {
+  OVERTIME
+  GENERAL
+}
+
+/// Lifecycle of an EmployeeRequest (supports two-level approval).
+enum RequestStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RequestApprovalAction {
+  APPROVED
+  REJECTED
+}
+
 /// Lifecycle of a single scheduled loan installment.
 enum LoanInstallmentStatus {
   PENDING
@@ -113,6 +157,25 @@ enum SubscriptionStatus {
   ACTIVE
   PAST_DUE
   SUSPENDED
+}
+
+/// Lifecycle of an employee leave/vacation request.
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Post-account onboarding wizard progress. Pre-auth steps (welcome /
+/// company-profile / admin-account) are not tracked server-side because no
+/// User row exists yet. null = legacy user never entered the wizard.
+enum OnboardingStep {
+  PRICING
+  ATTENDANCE
+  PAYROLL
+  BENEFITS
+  EMPLOYEES
+  COMPLETE
 }
 
 // ============================================================================
@@ -166,6 +229,12 @@ model Company {
   name                String
   /// MOL/WPS establishment number used when generating the bank WPS file.
   establishmentNumber String?
+  /// Public website URL collected during onboarding.
+  website             String?
+  /// Business sector / industry label (free text or code).
+  industry            String?
+  /// Cloudinary (or CDN) URL for the company logo.
+  logoUrl             String?
 
   // -- SaaS subscription / billing --
   planId             String?
@@ -174,6 +243,8 @@ model Company {
   trialEndsAt        DateTime?
   /// Next renewal/billing date.
   nextBillingDate    DateTime?
+  /// Billing cycle chosen at checkout: MONTHLY | ANNUAL.
+  billingCycle       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -186,10 +257,28 @@ model Company {
   roles         Role[]            @relation("CompanyRoles")
   users         User[]            @relation("CompanyUsers")
   shifts        Shift[]           @relation("CompanyShifts")
+  departments   Department[]      @relation("CompanyDepartments")
   employees     Employee[]        @relation("CompanyEmployees")
   payrollCycles PayrollCycle[]    @relation("CompanyPayrollCycles")
+  employeeRequests EmployeeRequest[] @relation("CompanyEmployeeRequests")
+  notifications    Notification[]    @relation("CompanyNotifications")
 
   @@index([planId])
+}
+
+/// Tenant department (org unit). Employees reference this via `departmentId`.
+model Department {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company    @relation("CompanyDepartments", fields: [companyId], references: [id], onDelete: Cascade)
+  employees Employee[] @relation("DepartmentEmployees")
+
+  @@unique([companyId, name])
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -229,6 +318,35 @@ model CompanyPolicy {
   /// Default weekend day names (e.g. ["FRIDAY", "SATURDAY"]).
   defaultWeekendDays String[] @default(["FRIDAY", "SATURDAY"])
 
+  // -- Payroll preferences (onboarding / settings) --
+  /// ISO currency code used for payslips / WPS display (KSA default SAR).
+  currency            String  @default("SAR") @db.VarChar(3)
+  /// Payroll cycle preference: MONTHLY | BIWEEKLY | WEEKLY.
+  payrollCycle        String  @default("MONTHLY")
+  /// Calendar day of month when salaries are paid (1–31). Relevant for MONTHLY.
+  payrollPayoutDay    Int     @default(27)
+  /// Whether the company wants direct bank deposit / WPS transfer enabled.
+  directBankTransfer  Boolean @default(false)
+
+  // -- Benefits / insurance preferences (onboarding) --
+  medicalInsuranceProvider String?
+  /// Insurance class/tier (VIP | A | B | C).
+  medicalInsuranceTier     String?
+  /// Auto-enrol new employees in GOSI when created.
+  gosiAutoEnroll           Boolean @default(true)
+  benefitHousingAllowance  Boolean @default(false)
+  benefitTransportAllowance Boolean @default(false)
+  benefitAnnualTickets     Boolean @default(false)
+  /// Housing allowance amount. When benefitHousingAllowanceIsPercentage is
+  /// true this is a % of basic salary; otherwise a fixed SAR amount/month.
+  benefitHousingAllowanceAmount       Decimal? @db.Decimal(12, 2)
+  benefitHousingAllowanceIsPercentage Boolean  @default(true)
+  /// Fixed monthly transport allowance in company currency (SAR).
+  benefitTransportAllowanceAmount     Decimal? @db.Decimal(12, 2)
+  /// Annual tickets value in company currency. Stored as annual; the sync
+  /// service materializes amount/12 as a monthly SalaryComponent.
+  benefitAnnualTicketsAmount          Decimal? @db.Decimal(12, 2)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -244,9 +362,11 @@ model CompanyPolicy {
 
 /// A tenant-defined role grouping a set of permissions.
 model Role {
-  id        String @id @default(uuid())
-  name      String
-  companyId String
+  id          String  @id @default(uuid())
+  name        String
+  companyId   String
+  description String?
+  isActive    Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -280,6 +400,10 @@ model User {
   id               String  @id @default(uuid())
   email            String  @unique
   password         String
+  /// Display name collected at onboarding / profile.
+  fullName         String?
+  phone            String?
+  jobTitle         String?
   companyId        String
   roleId           String
   isPortalUser     Boolean @default(false)
@@ -288,6 +412,14 @@ model User {
   /// Platform-level superuser (the SaaS operator): cross-tenant, all-access.
   /// Distinct from the tenant "Company Owner" role. Set manually / via seed.
   isPlatformAdmin  Boolean @default(false)
+  /// Hashed 6-digit OTP for forgot-password; null when unused / consumed.
+  passwordResetOtpHash      String?
+  passwordResetOtpExpiresAt DateTime?
+  /// Current onboarding wizard step. null for legacy / portal users that
+  /// never entered the owner onboarding flow. See OnboardingStep enum.
+  onboardingStep            OnboardingStep?
+  /// Set when the owner finishes the onboarding wizard (complete step).
+  onboardingCompletedAt     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -296,7 +428,8 @@ model User {
   company  Company   @relation("CompanyUsers", fields: [companyId], references: [id], onDelete: Cascade)
   role     Role      @relation("RoleUsers", fields: [roleId], references: [id])
   /// Back-relation for the optional 1-to-1 Employee link (FK lives on Employee).
-  employee Employee? @relation("EmployeeUser")
+  employee      Employee?       @relation("EmployeeUser")
+  notifications Notification[]  @relation("UserNotifications")
 
   @@index([companyId])
   @@index([roleId])
@@ -349,6 +482,39 @@ model Employee {
   /// Optional default shift assignment.
   shiftId          String?
   isActive         Boolean        @default(true)
+  /// FK to tenant Department (source of truth for org unit).
+  departmentId     String?
+  /// Denormalized department name — kept in sync with Department.name for
+  /// groupBy/reporting; prefer departmentId + relation for writes.
+  department       String?
+  /// Free-text job title (e.g. "UI/UX Designer"), shown in lists/cards.
+  position         String?
+  /// Direct manager (another employee in the same company).
+  managerId        String?
+  jobRank          JobRank        @default(EMPLOYEE)
+  workLocation     WorkLocation   @default(HEADQUARTERS)
+  /// Contract length in years (e.g. 1, 2, 3.5). Null = not set / open-ended.
+  contractDurationYears Decimal?  @db.Decimal(4, 1)
+
+  /// Profile photo URL (Cloudinary / uploads).
+  photoUrl         String?
+  nationalId       String?
+  dateOfBirth      DateTime?      @db.Date
+  gender           Gender?
+  maritalStatus    MaritalStatus?
+  address          String?
+  emergencyContactName     String?
+  emergencyContactRelation String?
+  emergencyContactPhone    String?
+  subDepartment    String?
+  hireDate         DateTime?      @db.Date
+  probationDays    Int?
+  bankName         String?
+  iban             String?
+  hasHealthInsurance     Boolean @default(false)
+  hasTransportAllowance  Boolean @default(false)
+  hasHousingAllowance    Boolean @default(false)
+  hasMealAllowance       Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -357,14 +523,112 @@ model Employee {
   company           Company            @relation("CompanyEmployees", fields: [companyId], references: [id], onDelete: Cascade)
   user              User?              @relation("EmployeeUser", fields: [userId], references: [id], onDelete: SetNull)
   shift             Shift?             @relation("ShiftEmployees", fields: [shiftId], references: [id], onDelete: SetNull)
+  departmentRef     Department?        @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
+  manager           Employee?          @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports     Employee[]         @relation("EmployeeManager")
   documents         Document[]         @relation("EmployeeDocuments")
   attendanceRecords AttendanceRecord[] @relation("EmployeeAttendanceRecords")
   salaryComponents  SalaryComponent[]  @relation("EmployeeSalaryComponents")
   loans             Loan[]             @relation("EmployeeLoans")
   payrollSlips      PayrollSlip[]      @relation("EmployeePayrollSlips")
+  leaveRequests     LeaveRequest[]     @relation("EmployeeLeaveRequests")
+  employeeRequests  EmployeeRequest[]  @relation("EmployeeEmployeeRequests")
 
   @@index([companyId])
   @@index([shiftId])
+  @@index([departmentId])
+  @@index([managerId])
+}
+
+/// A leave/vacation request raised by (or on behalf of) an employee.
+/// Deliberately minimal — no approval workflow/notifications yet; exists to
+/// back the dashboard's leave widgets and future ESS self-service.
+model LeaveRequest {
+  id         String      @id @default(uuid())
+  employeeId String
+  fromDate   DateTime    @db.Date
+  toDate     DateTime    @db.Date
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  /// User id of the manager/owner who approved or rejected.
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  employee Employee @relation("EmployeeLeaveRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+/// OT or general request with optional two-level approval (manager → HR/Owner).
+model EmployeeRequest {
+  id             String        @id @default(uuid())
+  companyId      String
+  employeeId     String
+  type           RequestType
+  title          String?
+  reason         String?
+  /// Overtime work date (OVERTIME).
+  date           DateTime?     @db.Date
+  /// Requested overtime hours (OVERTIME).
+  hours          Decimal?      @db.Decimal(6, 2)
+  status         RequestStatus @default(PENDING)
+  /// Current approval stage: 1 = direct manager, 2 = HR / Owner.
+  approvalLevel  Int           @default(1)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company               @relation("CompanyEmployeeRequests", fields: [companyId], references: [id], onDelete: Cascade)
+  employee  Employee              @relation("EmployeeEmployeeRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+  steps     RequestApprovalStep[] @relation("RequestApprovalSteps")
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([type])
+}
+
+model RequestApprovalStep {
+  id        String                @id @default(uuid())
+  requestId String
+  level     Int
+  action    RequestApprovalAction
+  actorId   String
+  note      String?
+  createdAt DateTime              @default(now())
+
+  request EmployeeRequest @relation("RequestApprovalSteps", fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+/// In-app notification for a user within a tenant.
+model Notification {
+  id        String    @id @default(uuid())
+  companyId String
+  userId    String
+  title     String
+  body      String
+  type      String
+  link      String?
+  readAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  company Company @relation("CompanyNotifications", fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([companyId])
 }
 
 /// An archived employee document with optional expiry (drives reminders).

@@ -24,6 +24,58 @@ export type AttendanceRow = {
   checkOut?: Date | null;
 };
 
+export type OvertimeGrant = {
+  date: Date;
+  hours: Prisma.Decimal;
+};
+
+export type PaidOvertimeDay = {
+  date: Date;
+  hours: Prisma.Decimal;
+  clockHours: Prisma.Decimal;
+  requestHours: Prisma.Decimal;
+};
+
+function ymdKey(date: Date): string {
+  return formatYmd(date);
+}
+
+/** Per calendar day: paid OT hours = max(clock, approved request). */
+export function resolvePaidOvertime(
+  attendance: Pick<AttendanceRow, 'date' | 'overtimeHours'>[],
+  approvedOvertime: OvertimeGrant[] = [],
+): PaidOvertimeDay[] {
+  const map = new Map<string, PaidOvertimeDay>();
+  for (const row of attendance) {
+    const key = ymdKey(row.date);
+    map.set(key, {
+      date: row.date,
+      hours: D(row.overtimeHours),
+      clockHours: D(row.overtimeHours),
+      requestHours: ZERO,
+    });
+  }
+  for (const req of approvedOvertime) {
+    const key = ymdKey(req.date);
+    const hours = D(req.hours);
+    const existing = map.get(key);
+    if (existing) {
+      existing.requestHours = hours;
+      existing.hours = Prisma.Decimal.max(existing.clockHours, hours);
+    } else {
+      map.set(key, {
+        date: req.date,
+        hours,
+        clockHours: ZERO,
+        requestHours: hours,
+      });
+    }
+  }
+  return [...map.values()].sort(
+    (a, b) => a.date.getTime() - b.date.getTime(),
+  );
+}
+
 export type SlipCalc = {
   /** Period earned basic (MONTHLY = contract basic; DAILY/HOURLY = rate × units). */
   basicSalary: Prisma.Decimal;
@@ -108,6 +160,8 @@ export function calculateEmployeeSlip(input: {
     | 'defaultWeekendDays'
   >;
   loanInstallmentAmounts: Prisma.Decimal[];
+  /** Approved OVERTIME requests in the period (paid as max vs clock OT). */
+  approvedOvertime?: OvertimeGrant[];
 }): SlipCalc {
   const basis = input.salaryBasis ?? SalaryBasis.MONTHLY;
   const contractBasic = D(input.basicSalary);
@@ -165,15 +219,18 @@ export function calculateEmployeeSlip(input: {
       delayMinutesTotal += row.delayMinutes;
       lateDays += 1;
     }
+  }
 
-    const otHours = D(row.overtimeHours);
-    if (otHours.greaterThan(0)) {
-      const isWeekend = weekends.has(weekdayNameUtc(row.date));
-      const mult = isWeekend
-        ? input.policy.overtimeMultiplierHoliday
-        : input.policy.overtimeMultiplierNormal;
-      overtimeBonus = overtimeBonus.plus(otHours.times(hourRate).times(mult));
-    }
+  for (const day of resolvePaidOvertime(
+    input.attendance,
+    input.approvedOvertime,
+  )) {
+    if (!day.hours.greaterThan(0)) continue;
+    const isWeekend = weekends.has(weekdayNameUtc(day.date));
+    const mult = isWeekend
+      ? input.policy.overtimeMultiplierHoliday
+      : input.policy.overtimeMultiplierNormal;
+    overtimeBonus = overtimeBonus.plus(day.hours.times(hourRate).times(mult));
   }
 
   if (basis === SalaryBasis.MONTHLY) {

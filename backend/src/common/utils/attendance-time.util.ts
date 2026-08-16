@@ -36,6 +36,25 @@ export function formatYmd(date: Date): string {
 }
 
 /**
+ * Parse a calendar "YYYY-MM-DD" (optional trailing time) into a UTC-midnight
+ * `@db.Date` value. Avoids `new Date('YYYY-MM-DD')` footguns across timezones.
+ */
+export function parseDateOnly(ymd: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd.trim());
+  if (!m) {
+    throw new Error(`Invalid date-only string: ${ymd}`);
+  }
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+}
+
+/** Inclusive calendar-day span between two UTC-midnight `@db.Date` values. */
+export function inclusiveDayCount(from: Date, to: Date): number {
+  const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+  const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  return Math.max(1, Math.round((b - a) / (24 * 60 * 60 * 1000)) + 1);
+}
+
+/**
  * Build an absolute instant from a calendar `date` + wall-clock "HH:mm" in `tz`.
  * `dayOffset = 1` is used for the end of an overnight shift (endTime <= startTime).
  */

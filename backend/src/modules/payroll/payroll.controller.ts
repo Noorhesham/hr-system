@@ -17,23 +17,25 @@ import type { Response } from 'express';
 import { PayrollService } from './payroll.service';
 import { CreatePayrollCycleDto } from './dto/create-payroll-cycle.dto';
 import { QueryPayrollCyclesDto } from './dto/query-payroll-cycles.dto';
+import { QueryPayrollSlipsDto } from './dto/query-payroll-slips.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 
 @ApiTags('Payroll')
 @ApiBearerAuth()
 @Controller('payroll')
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
 export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   /** Open a DRAFT cycle for month/year and calculate all active employees. */
   @Post('cycles')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   @ApiBody({
     type: CreatePayrollCycleDto,
     examples: {
@@ -52,6 +54,15 @@ export class PayrollController {
     return this.payrollService.findAll(companyId, query);
   }
 
+  @Get('cycles/:id/slips')
+  listSlips(
+    @Tenant() companyId: string,
+    @Param('id') id: string,
+    @Query() query: QueryPayrollSlipsDto,
+  ) {
+    return this.payrollService.listSlips(companyId, id, query);
+  }
+
   @Get('cycles/:id')
   findOne(@Tenant() companyId: string, @Param('id') id: string) {
     return this.payrollService.findOne(companyId, id);
@@ -65,35 +76,42 @@ export class PayrollController {
   /** Re-run the engine (DRAFT only). */
   @Post('cycles/:id/recalculate')
   @HttpCode(HttpStatus.OK)
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   recalculate(@Tenant() companyId: string, @Param('id') id: string) {
     return this.payrollService.recalculate(companyId, id);
   }
 
+  /** REVIEW → DRAFT (unlock recalculation). */
+  @Patch('cycles/:id/draft')
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
+  revertToDraft(@Tenant() companyId: string, @Param('id') id: string) {
+    return this.payrollService.revertToDraft(companyId, id);
+  }
+
   /** DRAFT → REVIEW */
   @Patch('cycles/:id/review')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   review(@Tenant() companyId: string, @Param('id') id: string) {
     return this.payrollService.moveToReview(companyId, id);
   }
 
   /** REVIEW → APPROVED (locks loan installments as DEDUCTED). */
   @Patch('cycles/:id/approve')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   approve(@Tenant() companyId: string, @Param('id') id: string) {
     return this.payrollService.approve(companyId, id);
   }
 
   /** APPROVED → CLOSED (final). */
   @Patch('cycles/:id/close')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   close(@Tenant() companyId: string, @Param('id') id: string) {
     return this.payrollService.close(companyId, id);
   }
 
   /** WPS CSV export (APPROVED or CLOSED). */
   @Get('cycles/:id/wps')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_PAYROLL)
   @ApiProduces('text/csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   async exportWps(

@@ -26,9 +26,10 @@ const query_attendance_dto_1 = require("./dto/query-attendance.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const tenant_guard_1 = require("../tenant/guards/tenant.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
-const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const permissions_guard_1 = require("../../common/guards/permissions.guard");
+const permissions_decorator_1 = require("../../common/decorators/permissions.decorator");
+const permissions_constant_1 = require("../../common/constants/permissions.constant");
 const tenant_decorator_1 = require("../tenant/decorators/tenant.decorator");
-const roles_constant_1 = require("../../common/constants/roles.constant");
 let AttendanceController = class AttendanceController {
     attendanceService;
     constructor(attendanceService) {
@@ -107,7 +108,7 @@ __decorate([
 ], AttendanceController.prototype, "checkOut", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(roles_constant_1.COMPANY_OWNER_ROLE),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.MANAGE_ATTENDANCE),
     (0, swagger_1.ApiBody)({
         type: upsert_attendance_dto_1.UpsertAttendanceDto,
         examples: {
@@ -135,7 +136,7 @@ __decorate([
 ], AttendanceController.prototype, "upsert", null);
 __decorate([
     (0, common_1.Post)('bulk'),
-    (0, roles_decorator_1.Roles)(roles_constant_1.COMPANY_OWNER_ROLE),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.MANAGE_ATTENDANCE),
     (0, swagger_1.ApiBody)({
         type: bulk_attendance_dto_1.BulkAttendanceDto,
         examples: {
@@ -188,7 +189,7 @@ __decorate([
 ], AttendanceController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, roles_decorator_1.Roles)(roles_constant_1.COMPANY_OWNER_ROLE),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.MANAGE_ATTENDANCE),
     openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, tenant_decorator_1.Tenant)()),
     __param(1, (0, common_1.Param)('id')),
@@ -201,7 +202,7 @@ exports.AttendanceController = AttendanceController = __decorate([
     (0, swagger_1.ApiTags)('Attendance'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('attendance'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [attendance_service_1.AttendanceService])
 ], AttendanceController);
 //# sourceMappingURL=attendance.controller.js.map

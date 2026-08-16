@@ -71,7 +71,15 @@ async function bootstrap() {
     app.enableCors({
         origin: [
             process.env.FRONTEND_URL || 'http://localhost:3000',
-            ...(isDev ? [/https:\/\/.*\.ngrok-free\.app$/] : []),
+            ...(isDev
+                ? [
+                    'http://localhost:3000',
+                    'http://localhost:3002',
+                    'http://127.0.0.1:3000',
+                    'http://127.0.0.1:3002',
+                    /https:\/\/.*\.ngrok-free\.app$/,
+                ]
+                : []),
         ],
         credentials: true,
         allowedHeaders: [

@@ -3,6 +3,7 @@ import { DelayDeductionType } from '@prisma/client';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -84,4 +85,102 @@ export class UpdatePolicyDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   defaultWeekendDays?: string[];
+
+  // ─── Payroll preferences ─────────────────────────────────────────────────
+  @ApiPropertyOptional({ example: 'SAR', maxLength: 3 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(3)
+  currency?: string;
+
+  @ApiPropertyOptional({
+    example: 'MONTHLY',
+    description: 'MONTHLY | BIWEEKLY | WEEKLY',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  payrollCycle?: string;
+
+  @ApiPropertyOptional({ example: 27, minimum: 1, maximum: 31 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(31)
+  payrollPayoutDay?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  directBankTransfer?: boolean;
+
+  // ─── Benefits / insurance ────────────────────────────────────────────────
+  @ApiPropertyOptional({ example: 'bupa', maxLength: 80 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  medicalInsuranceProvider?: string;
+
+  @ApiPropertyOptional({ example: 'B', maxLength: 10 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  medicalInsuranceTier?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  gosiAutoEnroll?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  benefitHousingAllowance?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  benefitTransportAllowance?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  benefitAnnualTickets?: boolean;
+
+  @ApiPropertyOptional({
+    example: 25,
+    description:
+      'Housing amount. Interpreted as % of basic when benefitHousingAllowanceIsPercentage is true, otherwise fixed SAR/month.',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  benefitHousingAllowanceAmount?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'When true, benefitHousingAllowanceAmount is a percentage (0–100).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  benefitHousingAllowanceIsPercentage?: boolean;
+
+  @ApiPropertyOptional({
+    example: 500,
+    description: 'Fixed monthly transport allowance in company currency.',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  benefitTransportAllowanceAmount?: number;
+
+  @ApiPropertyOptional({
+    example: 3600,
+    description:
+      'Annual tickets value (yearly). Synced to employees as amount/12 monthly SalaryComponent.',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  benefitAnnualTicketsAmount?: number;
 }

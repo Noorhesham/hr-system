@@ -12,6 +12,7 @@ import {
 import { DatabaseService } from '../../database/database.service';
 import { PageDto } from '../../common/pagination/page.dto';
 import { PageMetaDto } from '../../common/pagination/page-meta.dto';
+import { parseDateOnly } from '../../common/utils/attendance-time.util';
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { ApproveLoanDto } from './dto/approve-loan.dto';
 import { QueryLoansDto } from './dto/query-loans.dto';
@@ -112,7 +113,7 @@ export class LoanService {
       dto.installmentAmount,
     );
 
-    const start = new Date(dto.startDate);
+    const start = parseDateOnly(dto.startDate);
     const installmentsData = perCents.map((cents, i) => ({
       loanId: loan.id,
       amount: new Prisma.Decimal(cents).dividedBy(100),

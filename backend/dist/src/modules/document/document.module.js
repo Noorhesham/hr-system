@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DocumentModule = void 0;
 const common_1 = require("@nestjs/common");
 const database_module_1 = require("../../database/database.module");
+const upload_module_1 = require("../upload/upload.module");
 const document_service_1 = require("./document.service");
 const document_controller_1 = require("./document.controller");
 let DocumentModule = class DocumentModule {
@@ -16,7 +17,7 @@ let DocumentModule = class DocumentModule {
 exports.DocumentModule = DocumentModule;
 exports.DocumentModule = DocumentModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule],
+        imports: [database_module_1.DatabaseModule, upload_module_1.UploadModule],
         controllers: [document_controller_1.DocumentController],
         providers: [document_service_1.DocumentService],
     })

@@ -15,14 +15,15 @@ import { UpdateSalaryComponentDto } from './dto/update-salary-component.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 
 @ApiTags('Salary Components')
 @ApiBearerAuth()
 @Controller()
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
 export class SalaryComponentController {
   constructor(
     private readonly salaryComponentService: SalaryComponentService,
@@ -30,7 +31,7 @@ export class SalaryComponentController {
 
   /** Add a recurring allowance/deduction to an employee (Company Owner only). */
   @Post('employees/:employeeId/salary-components')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.UPDATE_EMPLOYEE)
   @ApiBody({
     type: CreateSalaryComponentDto,
     examples: {
@@ -63,7 +64,7 @@ export class SalaryComponentController {
 
   /** Update a salary component (Company Owner only). */
   @Patch('salary-components/:id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.UPDATE_EMPLOYEE)
   @ApiBody({
     type: UpdateSalaryComponentDto,
     examples: {
@@ -80,7 +81,7 @@ export class SalaryComponentController {
 
   /** Remove a salary component (Company Owner only). */
   @Delete('salary-components/:id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.UPDATE_EMPLOYEE)
   remove(@Tenant() companyId: string, @Param('id') id: string) {
     return this.salaryComponentService.remove(companyId, id);
   }

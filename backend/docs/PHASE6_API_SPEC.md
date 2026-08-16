@@ -37,5 +37,8 @@ Company Owner tokens get `403 Insufficient role` on `/ess/*`.
 ## Out of scope (later)
 
 - PDF payslip download / Excel report files
-- Leave request workflow & OT request workflow
-- Multi-level approvals UI
+- Configurable multi-level approval chains beyond OT/general (see Phase 7)
+- Leave balance / accrual
+
+> **Moved to Phase 7:** OT request workflow, multi-level approvals for requests,
+> in-app notifications, roles UI — see [`PHASE7_REQUESTS_RBAC.md`](./PHASE7_REQUESTS_RBAC.md).

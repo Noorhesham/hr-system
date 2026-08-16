@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formatYmd = formatYmd;
+exports.parseDateOnly = parseDateOnly;
+exports.inclusiveDayCount = inclusiveDayCount;
 exports.wallClockToInstant = wallClockToInstant;
 exports.normalizeToTenantDay = normalizeToTenantDay;
 exports.computeAttendanceMetrics = computeAttendanceMetrics;
@@ -15,6 +17,18 @@ function ymdOf(date) {
 function formatYmd(date) {
     const { y, m, d } = ymdOf(date);
     return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+function parseDateOnly(ymd) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd.trim());
+    if (!m) {
+        throw new Error(`Invalid date-only string: ${ymd}`);
+    }
+    return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+}
+function inclusiveDayCount(from, to) {
+    const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+    const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+    return Math.max(1, Math.round((b - a) / (24 * 60 * 60 * 1000)) + 1);
 }
 function wallClockToInstant(date, hhmm, tz, dayOffset = 0) {
     const { y, m, d } = ymdOf(date);

@@ -19,7 +19,15 @@ import { SalaryComponentModule } from './modules/salary-component/salary-compone
 import { LoanModule } from './modules/loan/loan.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { EssModule } from './modules/ess/ess.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { PlansModule } from './modules/plans/plans.module';
+import { LeaveModule } from './modules/leave/leave.module';
+import { DepartmentModule } from './modules/department/department.module';
+import { RoleModule } from './modules/role/role.module';
+import { RequestModule } from './modules/request/request.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -31,7 +39,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 
     // ─── Infrastructure ────────────────────────────────────────────────────
     DatabaseModule,
-  
+
     HashingModule,
     MyLoggerModule,
 
@@ -54,15 +62,22 @@ import { ReportsModule } from './modules/reports/reports.module';
     EmployeeModule,
     DocumentModule,
     ShiftModule,
+    DepartmentModule,
     AttendanceModule,
     SalaryComponentModule,
     LoanModule,
     PayrollModule,
+    LeaveModule,
     EssModule,
     ReportsModule,
+    UploadModule,
+    OnboardingModule,
+    PlansModule,
+    RoleModule,
+    RequestModule,
+    NotificationModule,
   ],
   providers: [
-
     // ThrottlerGuard runs globally on EVERY endpoint
     {
       provide: APP_GUARD,

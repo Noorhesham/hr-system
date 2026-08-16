@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Res,
   UseGuards,
@@ -17,7 +18,15 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { ChangePasswordDto, LoginDto, RegisterDto } from './dto/auth.dto';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
+  VerifyResetOtpDto,
+} from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
@@ -67,7 +76,7 @@ export class AuthController {
     examples: {
       default: {
         summary: 'Login',
-        value: { email: 'admin@acme.com', password: 'Passw0rd!' },
+        value: { email: 'owner@najd.sa', password: 'Owner@1234' },
       },
     },
   })
@@ -79,6 +88,63 @@ export class AuthController {
       await this.authService.login(dto);
     this.authService.setRefreshTokenCookie(res, refreshToken);
     return { accessToken, user };
+  }
+
+  /**
+   * Request a 6-digit password-reset OTP. Always 200 (no email enumeration).
+   * Non-production responses include `devOtp` for local testing (also logged).
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiBody({
+    type: ForgotPasswordDto,
+    examples: {
+      default: {
+        summary: 'Request OTP',
+        value: { email: 'owner@najd.sa' },
+      },
+    },
+  })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  /** Verify OTP → short-lived `resetToken` for POST /auth/reset-password. */
+  @Post('verify-reset-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBody({
+    type: VerifyResetOtpDto,
+    examples: {
+      default: {
+        summary: 'Verify OTP',
+        value: { email: 'owner@najd.sa', code: '123456' },
+      },
+    },
+  })
+  verifyResetOtp(@Body() dto: VerifyResetOtpDto) {
+    return this.authService.verifyResetOtp(dto);
+  }
+
+  /** Set a new password using the reset token from verify-reset-otp. */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiBody({
+    type: ResetPasswordDto,
+    examples: {
+      default: {
+        summary: 'Reset password',
+        value: {
+          resetToken: '<from verify-reset-otp>',
+          newPassword: 'Owner@1234',
+        },
+      },
+    },
+  })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   /**
@@ -141,11 +207,35 @@ export class AuthController {
     return { accessToken };
   }
 
+  /** Update display profile (fullName / phone / jobTitle). Email cannot be changed. */
+  @Patch('profile')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiBody({
+    type: UpdateProfileDto,
+    examples: {
+      default: {
+        summary: 'Update profile',
+        value: {
+          fullName: 'أحمد الحربي',
+          phone: '0501234567',
+          jobTitle: 'مدير الموارد البشرية',
+        },
+      },
+    },
+  })
+  updateProfile(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user, dto);
+  }
+
   /** Echo the authenticated principal (handy for verifying a token). */
   @Get('me')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+  me(@CurrentUser('userId') userId: string) {
+    return this.authService.getMe(userId);
   }
 }

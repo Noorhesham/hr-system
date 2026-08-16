@@ -18,16 +18,24 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const company_service_1 = require("./company.service");
 const update_policy_dto_1 = require("./dto/update-policy.dto");
+const update_company_dto_1 = require("./dto/update-company.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const tenant_guard_1 = require("../tenant/guards/tenant.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
-const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const permissions_guard_1 = require("../../common/guards/permissions.guard");
+const permissions_decorator_1 = require("../../common/decorators/permissions.decorator");
+const permissions_constant_1 = require("../../common/constants/permissions.constant");
 const tenant_decorator_1 = require("../tenant/decorators/tenant.decorator");
-const roles_constant_1 = require("../../common/constants/roles.constant");
 let CompanyController = class CompanyController {
     companyService;
     constructor(companyService) {
         this.companyService = companyService;
+    }
+    getCompany(companyId) {
+        return this.companyService.getCompany(companyId);
+    }
+    updateCompany(companyId, dto) {
+        return this.companyService.updateCompany(companyId, dto);
     }
     getPolicy(companyId) {
         return this.companyService.getPolicy(companyId);
@@ -38,6 +46,25 @@ let CompanyController = class CompanyController {
 };
 exports.CompanyController = CompanyController;
 __decorate([
+    (0, common_1.Get)(),
+    openapi.ApiResponse({ status: 200 }),
+    __param(0, (0, tenant_decorator_1.Tenant)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CompanyController.prototype, "getCompany", null);
+__decorate([
+    (0, common_1.Patch)(),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.MANAGE_COMPANY_POLICY),
+    (0, swagger_1.ApiBody)({ type: update_company_dto_1.UpdateCompanyDto }),
+    openapi.ApiResponse({ status: 200 }),
+    __param(0, (0, tenant_decorator_1.Tenant)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_company_dto_1.UpdateCompanyDto]),
+    __metadata("design:returntype", void 0)
+], CompanyController.prototype, "updateCompany", null);
+__decorate([
     (0, common_1.Get)('policy'),
     openapi.ApiResponse({ status: 200 }),
     __param(0, (0, tenant_decorator_1.Tenant)()),
@@ -47,7 +74,7 @@ __decorate([
 ], CompanyController.prototype, "getPolicy", null);
 __decorate([
     (0, common_1.Patch)('policy'),
-    (0, roles_decorator_1.Roles)(roles_constant_1.COMPANY_OWNER_ROLE),
+    (0, permissions_decorator_1.Permissions)(permissions_constant_1.PERMISSIONS.MANAGE_COMPANY_POLICY),
     (0, swagger_1.ApiBody)({
         type: update_policy_dto_1.UpdatePolicyDto,
         examples: {
@@ -55,14 +82,17 @@ __decorate([
                 summary: 'Update company policy',
                 value: {
                     delayDeductionType: 'PER_MINUTE',
-                    absenceMultiplierUnexcused: 1.0,
-                    absenceMultiplierExcused: 0.5,
-                    overtimeMultiplierNormal: 1.5,
-                    overtimeMultiplierHoliday: 2.0,
-                    gosiEmployeePercentage: 9.75,
-                    gosiCompanyPercentage: 11.75,
-                    gosiNumber: 'GOSI-99887',
                     defaultWeekendDays: ['FRIDAY', 'SATURDAY'],
+                    currency: 'SAR',
+                    payrollCycle: 'MONTHLY',
+                    payrollPayoutDay: 27,
+                    directBankTransfer: true,
+                    medicalInsuranceProvider: 'bupa',
+                    medicalInsuranceTier: 'B',
+                    gosiAutoEnroll: true,
+                    benefitHousingAllowance: false,
+                    benefitTransportAllowance: true,
+                    benefitAnnualTickets: true,
                 },
             },
         },
@@ -78,7 +108,7 @@ exports.CompanyController = CompanyController = __decorate([
     (0, swagger_1.ApiTags)('Company'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('company'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, tenant_guard_1.TenantGuard, roles_guard_1.RolesGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [company_service_1.CompanyService])
 ], CompanyController);
 //# sourceMappingURL=company.controller.js.map

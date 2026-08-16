@@ -9,18 +9,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangePasswordDto = exports.LoginDto = exports.RegisterDto = void 0;
+exports.ResetPasswordDto = exports.VerifyResetOtpDto = exports.ForgotPasswordDto = exports.UpdateProfileDto = exports.ChangePasswordDto = exports.LoginDto = exports.RegisterDto = void 0;
 const openapi = require("@nestjs/swagger");
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class RegisterDto {
     companyName;
     email;
+    fullName;
+    phone;
+    jobTitle;
     password;
     establishmentNumber;
     planId;
     static _OPENAPI_METADATA_FACTORY() {
-        return { companyName: { required: true, type: () => String, maxLength: 120 }, email: { required: true, type: () => String, format: "email" }, password: { required: true, type: () => String, minLength: 8, maxLength: 72, pattern: "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)" }, establishmentNumber: { required: false, type: () => String, maxLength: 50 }, planId: { required: false, type: () => String } };
+        return { companyName: { required: true, type: () => String, maxLength: 120 }, email: { required: true, type: () => String, format: "email" }, fullName: { required: false, type: () => String, maxLength: 120 }, phone: { required: false, type: () => String, maxLength: 20 }, jobTitle: { required: false, type: () => String, maxLength: 120 }, password: { required: true, type: () => String, minLength: 8, maxLength: 72, pattern: "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)" }, establishmentNumber: { required: false, type: () => String, maxLength: 50 }, planId: { required: false, type: () => String } };
     }
 }
 exports.RegisterDto = RegisterDto;
@@ -36,6 +39,27 @@ __decorate([
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'أحمد الحربي', maxLength: 120 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "fullName", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '0501234567', maxLength: 20 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(20),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "phone", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'مدير الموارد البشرية', maxLength: 120 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "jobTitle", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         example: 'Passw0rd!',
@@ -119,4 +143,96 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "newPassword", void 0);
+class UpdateProfileDto {
+    fullName;
+    phone;
+    jobTitle;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { fullName: { required: false, type: () => String, maxLength: 120 }, phone: { required: false, type: () => String, maxLength: 20 }, jobTitle: { required: false, type: () => String, maxLength: 120 } };
+    }
+}
+exports.UpdateProfileDto = UpdateProfileDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'أحمد الحربي', maxLength: 120 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "fullName", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '0501234567', maxLength: 20 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(20),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "phone", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'مدير الموارد البشرية', maxLength: 120 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "jobTitle", void 0);
+class ForgotPasswordDto {
+    email;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { email: { required: true, type: () => String, format: "email" } };
+    }
+}
+exports.ForgotPasswordDto = ForgotPasswordDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'owner@najd.sa', format: 'email' }),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], ForgotPasswordDto.prototype, "email", void 0);
+class VerifyResetOtpDto {
+    email;
+    code;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { email: { required: true, type: () => String, format: "email" }, code: { required: true, type: () => String, pattern: "^\\d{6}$" } };
+    }
+}
+exports.VerifyResetOtpDto = VerifyResetOtpDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'owner@najd.sa', format: 'email' }),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], VerifyResetOtpDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: '123456', description: '6-digit OTP from email / logs' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^\d{6}$/, { message: 'code must be a 6-digit number' }),
+    __metadata("design:type", String)
+], VerifyResetOtpDto.prototype, "code", void 0);
+class ResetPasswordDto {
+    resetToken;
+    newPassword;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { resetToken: { required: true, type: () => String }, newPassword: { required: true, type: () => String, minLength: 8, maxLength: 72, pattern: "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)" } };
+    }
+}
+exports.ResetPasswordDto = ResetPasswordDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Short-lived reset token returned by verify-reset-otp',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "resetToken", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: 'NewPassw0rd!',
+        minLength: 8,
+        maxLength: 72,
+        description: 'Must contain at least one lowercase letter, one uppercase letter and one number',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MaxLength)(72),
+    (0, class_validator_1.Matches)(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+        message: 'newPassword must contain at least one lowercase letter, one uppercase letter and one number',
+    }),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "newPassword", void 0);
 //# sourceMappingURL=auth.dto.js.map

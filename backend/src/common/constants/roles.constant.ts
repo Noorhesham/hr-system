@@ -12,3 +12,12 @@ export const COMPANY_OWNER_ROLE = 'Company Owner';
  * requests, …) lands in Phase 6.
  */
 export const EMPLOYEE_ROLE = 'Employee';
+
+/** Built-in HR role — most MANAGE_* + approve permissions. */
+export const HR_ROLE = 'HR';
+
+/** Built-in team/dept manager role — view team + approve leaves/requests. */
+export const MANAGER_ROLE = 'Manager';
+
+/** Built-in payroll specialist role. */
+export const PAYROLL_ROLE = 'Payroll';

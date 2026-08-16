@@ -28,7 +28,15 @@ const salary_component_module_1 = require("./modules/salary-component/salary-com
 const loan_module_1 = require("./modules/loan/loan.module");
 const payroll_module_1 = require("./modules/payroll/payroll.module");
 const ess_module_1 = require("./modules/ess/ess.module");
+const upload_module_1 = require("./modules/upload/upload.module");
 const reports_module_1 = require("./modules/reports/reports.module");
+const onboarding_module_1 = require("./modules/onboarding/onboarding.module");
+const plans_module_1 = require("./modules/plans/plans.module");
+const leave_module_1 = require("./modules/leave/leave.module");
+const department_module_1 = require("./modules/department/department.module");
+const role_module_1 = require("./modules/role/role.module");
+const request_module_1 = require("./modules/request/request.module");
+const notification_module_1 = require("./modules/notification/notification.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -56,12 +64,20 @@ exports.AppModule = AppModule = __decorate([
             employee_module_1.EmployeeModule,
             document_module_1.DocumentModule,
             shift_module_1.ShiftModule,
+            department_module_1.DepartmentModule,
             attendance_module_1.AttendanceModule,
             salary_component_module_1.SalaryComponentModule,
             loan_module_1.LoanModule,
             payroll_module_1.PayrollModule,
+            leave_module_1.LeaveModule,
             ess_module_1.EssModule,
             reports_module_1.ReportsModule,
+            upload_module_1.UploadModule,
+            onboarding_module_1.OnboardingModule,
+            plans_module_1.PlansModule,
+            role_module_1.RoleModule,
+            request_module_1.RequestModule,
+            notification_module_1.NotificationModule,
         ],
         providers: [
             {

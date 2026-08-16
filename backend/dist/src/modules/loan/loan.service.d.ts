@@ -11,8 +11,8 @@ export declare class LoanService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        employeeId: string;
         status: import("@prisma/client").$Enums.LoanStatus;
+        employeeId: string;
         totalAmount: Prisma.Decimal;
     }>;
     findAllForEmployee(companyId: string, employeeId: string): Promise<({
@@ -20,8 +20,8 @@ export declare class LoanService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            amount: Prisma.Decimal;
             status: import("@prisma/client").$Enums.LoanInstallmentStatus;
+            amount: Prisma.Decimal;
             loanId: string;
             dueDate: Date;
             payrollCycleId: string | null;
@@ -30,8 +30,8 @@ export declare class LoanService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        employeeId: string;
         status: import("@prisma/client").$Enums.LoanStatus;
+        employeeId: string;
         totalAmount: Prisma.Decimal;
     })[]>;
     findAll(companyId: string, query: QueryLoansDto): Promise<PageDto<{
@@ -43,8 +43,8 @@ export declare class LoanService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        employeeId: string;
         status: import("@prisma/client").$Enums.LoanStatus;
+        employeeId: string;
         totalAmount: Prisma.Decimal;
     }>>;
     findOne(companyId: string, id: string): Promise<{
@@ -56,8 +56,8 @@ export declare class LoanService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            amount: Prisma.Decimal;
             status: import("@prisma/client").$Enums.LoanInstallmentStatus;
+            amount: Prisma.Decimal;
             loanId: string;
             dueDate: Date;
             payrollCycleId: string | null;
@@ -66,8 +66,8 @@ export declare class LoanService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        employeeId: string;
         status: import("@prisma/client").$Enums.LoanStatus;
+        employeeId: string;
         totalAmount: Prisma.Decimal;
     }>;
     approve(companyId: string, id: string, dto: ApproveLoanDto): Promise<{
@@ -75,8 +75,8 @@ export declare class LoanService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            amount: Prisma.Decimal;
             status: import("@prisma/client").$Enums.LoanInstallmentStatus;
+            amount: Prisma.Decimal;
             loanId: string;
             dueDate: Date;
             payrollCycleId: string | null;
@@ -85,8 +85,8 @@ export declare class LoanService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        employeeId: string;
         status: import("@prisma/client").$Enums.LoanStatus;
+        employeeId: string;
         totalAmount: Prisma.Decimal;
     }>;
     remove(companyId: string, id: string): Promise<{

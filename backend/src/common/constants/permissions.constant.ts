@@ -1,0 +1,76 @@
+/**
+ * Global permission action catalog. Seeded into `Permission` and attached to
+ * per-company roles. Controllers enforce these via `@Permissions(...)`.
+ */
+export const PERMISSIONS = {
+  CREATE_EMPLOYEE: 'CREATE_EMPLOYEE',
+  UPDATE_EMPLOYEE: 'UPDATE_EMPLOYEE',
+  VIEW_EMPLOYEE: 'VIEW_EMPLOYEE',
+  MANAGE_ATTENDANCE: 'MANAGE_ATTENDANCE',
+  MANAGE_PAYROLL: 'MANAGE_PAYROLL',
+  MANAGE_LOANS: 'MANAGE_LOANS',
+  MANAGE_SHIFTS: 'MANAGE_SHIFTS',
+  MANAGE_DOCUMENTS: 'MANAGE_DOCUMENTS',
+  VIEW_REPORTS: 'VIEW_REPORTS',
+  MANAGE_COMPANY_POLICY: 'MANAGE_COMPANY_POLICY',
+  MANAGE_LEAVES: 'MANAGE_LEAVES',
+  APPROVE_LEAVES: 'APPROVE_LEAVES',
+  MANAGE_REQUESTS: 'MANAGE_REQUESTS',
+  APPROVE_REQUESTS: 'APPROVE_REQUESTS',
+  MANAGE_ROLES: 'MANAGE_ROLES',
+  VIEW_ROLES: 'VIEW_ROLES',
+  MANAGE_DEPARTMENTS: 'MANAGE_DEPARTMENTS',
+} as const;
+
+export type PermissionAction =
+  (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export const ALL_PERMISSION_ACTIONS: PermissionAction[] = Object.values(
+  PERMISSIONS,
+);
+
+/** Built-in role names that cannot be deleted / renamed. */
+export const SYSTEM_ROLE_NAMES = [
+  'Company Owner',
+  'Employee',
+  'HR',
+  'Manager',
+  'Payroll',
+] as const;
+
+export type SystemRoleName = (typeof SYSTEM_ROLE_NAMES)[number];
+
+/** Default permission sets for system roles (Owner gets all via seed). */
+export const SYSTEM_ROLE_PERMISSIONS: Record<
+  Exclude<SystemRoleName, 'Company Owner' | 'Employee'>,
+  PermissionAction[]
+> = {
+  HR: [
+    PERMISSIONS.CREATE_EMPLOYEE,
+    PERMISSIONS.UPDATE_EMPLOYEE,
+    PERMISSIONS.VIEW_EMPLOYEE,
+    PERMISSIONS.MANAGE_ATTENDANCE,
+    PERMISSIONS.MANAGE_LOANS,
+    PERMISSIONS.MANAGE_SHIFTS,
+    PERMISSIONS.MANAGE_DOCUMENTS,
+    PERMISSIONS.MANAGE_LEAVES,
+    PERMISSIONS.APPROVE_LEAVES,
+    PERMISSIONS.MANAGE_REQUESTS,
+    PERMISSIONS.APPROVE_REQUESTS,
+    PERMISSIONS.MANAGE_DEPARTMENTS,
+    PERMISSIONS.VIEW_REPORTS,
+    PERMISSIONS.VIEW_ROLES,
+  ],
+  Manager: [
+    PERMISSIONS.VIEW_EMPLOYEE,
+    PERMISSIONS.APPROVE_LEAVES,
+    PERMISSIONS.APPROVE_REQUESTS,
+    PERMISSIONS.MANAGE_ATTENDANCE,
+  ],
+  Payroll: [
+    PERMISSIONS.VIEW_EMPLOYEE,
+    PERMISSIONS.MANAGE_PAYROLL,
+    PERMISSIONS.VIEW_REPORTS,
+    PERMISSIONS.MANAGE_LOANS,
+  ],
+};

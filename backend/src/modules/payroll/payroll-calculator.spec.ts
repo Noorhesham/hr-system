@@ -101,4 +101,68 @@ describe('calculateEmployeeSlip — salary basis', () => {
     expect(slip.overtimeBonus.toNumber()).toBe(75); // 2 × 25 × 1.5
     expect(slip.netSalary.toNumber()).toBe(275);
   });
+
+  it('MONTHLY LEAVE deducts excused multiplier', () => {
+    const slip = calculateEmployeeSlip({
+      basicSalary: D(3000),
+      salaryBasis: SalaryBasis.MONTHLY,
+      isGosiRegistered: false,
+      components: [],
+      attendance: [
+        {
+          date: new Date(Date.UTC(2026, 6, 2)),
+          status: AttendanceStatus.LEAVE,
+          delayMinutes: 0,
+          overtimeHours: D(0),
+        },
+      ],
+      policy: {
+        ...basePolicy,
+        absenceMultiplierExcused: new Prisma.Decimal(0.5),
+      },
+      loanInstallmentAmounts: [],
+    });
+    expect(slip.breakdown.absenceDeduction.toNumber()).toBe(50);
+    expect(slip.netSalary.toNumber()).toBe(2950);
+  });
+
+  it('OT pays max(clock, approved request), not the sum', () => {
+    const slip = calculateEmployeeSlip({
+      basicSalary: D(2400),
+      salaryBasis: SalaryBasis.MONTHLY,
+      isGosiRegistered: false,
+      components: [],
+      attendance: [
+        {
+          date: new Date(Date.UTC(2026, 6, 6)), // Monday
+          status: AttendanceStatus.PRESENT,
+          delayMinutes: 0,
+          overtimeHours: D(2),
+        },
+      ],
+      policy: basePolicy,
+      loanInstallmentAmounts: [],
+      approvedOvertime: [
+        { date: new Date(Date.UTC(2026, 6, 6)), hours: D(3) },
+      ],
+    });
+    // hourRate = 2400/30/8 = 10; 3h × 10 × 1.5 = 45
+    expect(slip.overtimeBonus.toNumber()).toBe(45);
+  });
+
+  it('approved OT without a punch still pays', () => {
+    const slip = calculateEmployeeSlip({
+      basicSalary: D(2400),
+      salaryBasis: SalaryBasis.MONTHLY,
+      isGosiRegistered: false,
+      components: [],
+      attendance: [],
+      policy: basePolicy,
+      loanInstallmentAmounts: [],
+      approvedOvertime: [
+        { date: new Date(Date.UTC(2026, 6, 6)), hours: D(2) },
+      ],
+    });
+    expect(slip.overtimeBonus.toNumber()).toBe(30);
+  });
 });

@@ -1,0 +1,91 @@
+import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
+import { LeaveService } from './leave.service';
+import { CreateLeaveDto, RejectLeaveDto } from './dto/create-leave.dto';
+import { QueryLeavesDto } from './dto/query-leaves.dto';
+export declare class LeaveController {
+    private readonly leaveService;
+    constructor(leaveService: LeaveService);
+    create(companyId: string, actor: AuthenticatedUser, dto: CreateLeaveDto): Promise<{
+        id: string;
+        employeeId: string;
+        employeeName: string | null;
+        managerId: string | null;
+        fromDate: string;
+        toDate: string;
+        days: number;
+        reason: string | null;
+        status: import("@prisma/client").$Enums.LeaveStatus;
+        reviewedById: string | null;
+        reviewedAt: string | null;
+        reviewNote: string | null;
+        createdAt: string;
+        updatedAt: string;
+    }>;
+    findAll(companyId: string, actor: AuthenticatedUser, query: QueryLeavesDto): Promise<import("../../common/pagination/page.dto").PageDto<{
+        id: string;
+        employeeId: string;
+        employeeName: string | null;
+        managerId: string | null;
+        fromDate: string;
+        toDate: string;
+        days: number;
+        reason: string | null;
+        status: import("@prisma/client").$Enums.LeaveStatus;
+        reviewedById: string | null;
+        reviewedAt: string | null;
+        reviewNote: string | null;
+        createdAt: string;
+        updatedAt: string;
+    }>>;
+    findOne(companyId: string, actor: AuthenticatedUser, id: string): Promise<{
+        id: string;
+        employeeId: string;
+        employeeName: string | null;
+        managerId: string | null;
+        fromDate: string;
+        toDate: string;
+        days: number;
+        reason: string | null;
+        status: import("@prisma/client").$Enums.LeaveStatus;
+        reviewedById: string | null;
+        reviewedAt: string | null;
+        reviewNote: string | null;
+        createdAt: string;
+        updatedAt: string;
+    }>;
+    approve(companyId: string, actor: AuthenticatedUser, id: string): Promise<{
+        id: string;
+        employeeId: string;
+        employeeName: string | null;
+        managerId: string | null;
+        fromDate: string;
+        toDate: string;
+        days: number;
+        reason: string | null;
+        status: import("@prisma/client").$Enums.LeaveStatus;
+        reviewedById: string | null;
+        reviewedAt: string | null;
+        reviewNote: string | null;
+        createdAt: string;
+        updatedAt: string;
+    }>;
+    reject(companyId: string, actor: AuthenticatedUser, id: string, dto: RejectLeaveDto): Promise<{
+        id: string;
+        employeeId: string;
+        employeeName: string | null;
+        managerId: string | null;
+        fromDate: string;
+        toDate: string;
+        days: number;
+        reason: string | null;
+        status: import("@prisma/client").$Enums.LeaveStatus;
+        reviewedById: string | null;
+        reviewedAt: string | null;
+        reviewNote: string | null;
+        createdAt: string;
+        updatedAt: string;
+    }>;
+    remove(companyId: string, actor: AuthenticatedUser, id: string): Promise<{
+        success: true;
+    }>;
+}

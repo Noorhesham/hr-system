@@ -12,6 +12,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../../database/database.service");
+const userAuthInclude = {
+    role: {
+        select: {
+            name: true,
+            permissions: { select: { action: true } },
+        },
+    },
+    employee: { select: { id: true } },
+    company: { select: { planId: true, subscriptionStatus: true } },
+};
 let UserService = class UserService {
     db;
     constructor(db) {
@@ -20,19 +30,13 @@ let UserService = class UserService {
     findByEmail(email) {
         return this.db.user.findUnique({
             where: { email },
-            include: {
-                role: { select: { name: true } },
-                employee: { select: { id: true } },
-            },
+            include: userAuthInclude,
         });
     }
     findById(id) {
         return this.db.user.findUnique({
             where: { id },
-            include: {
-                role: { select: { name: true } },
-                employee: { select: { id: true } },
-            },
+            include: userAuthInclude,
         });
     }
 };

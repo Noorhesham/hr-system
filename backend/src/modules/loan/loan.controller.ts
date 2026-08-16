@@ -19,20 +19,21 @@ import { QueryLoansDto } from './dto/query-loans.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenant/guards/tenant.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PERMISSIONS } from '../../common/constants/permissions.constant';
 import { Tenant } from '../tenant/decorators/tenant.decorator';
-import { COMPANY_OWNER_ROLE } from '../../common/constants/roles.constant';
 
 @ApiTags('Loans')
 @ApiBearerAuth()
 @Controller()
-@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, PermissionsGuard)
 export class LoanController {
   constructor(private readonly loanService: LoanService) {}
 
   /** Create a PENDING loan for an employee (Company Owner only). */
   @Post('employees/:employeeId/loans')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_LOANS)
   @ApiBody({
     type: CreateLoanDto,
     examples: {
@@ -58,12 +59,14 @@ export class LoanController {
 
   /** Company-wide, paginated list of loans (optional status/employee filter). */
   @Get('loans')
+  @Permissions(PERMISSIONS.MANAGE_LOANS)
   findAll(@Tenant() companyId: string, @Query() query: QueryLoansDto) {
     return this.loanService.findAll(companyId, query);
   }
 
   /** Loan detail including its installment schedule. */
   @Get('loans/:id')
+  @Permissions(PERMISSIONS.MANAGE_LOANS)
   findOne(@Tenant() companyId: string, @Param('id') id: string) {
     return this.loanService.findOne(companyId, id);
   }
@@ -71,7 +74,7 @@ export class LoanController {
   /** Approve a loan and generate its installment schedule (Company Owner only). */
   @Patch('loans/:id/approve')
   @HttpCode(HttpStatus.OK)
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_LOANS)
   @ApiBody({
     type: ApproveLoanDto,
     examples: {
@@ -95,7 +98,7 @@ export class LoanController {
 
   /** Delete a PENDING loan (Company Owner only). */
   @Delete('loans/:id')
-  @Roles(COMPANY_OWNER_ROLE)
+  @Permissions(PERMISSIONS.MANAGE_LOANS)
   remove(@Tenant() companyId: string, @Param('id') id: string) {
     return this.loanService.remove(companyId, id);
   }

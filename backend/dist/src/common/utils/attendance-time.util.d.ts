@@ -9,6 +9,8 @@ export interface AttendanceMetrics {
     overtimeHours: Prisma.Decimal;
 }
 export declare function formatYmd(date: Date): string;
+export declare function parseDateOnly(ymd: string): Date;
+export declare function inclusiveDayCount(from: Date, to: Date): number;
 export declare function wallClockToInstant(date: Date, hhmm: string, tz: string, dayOffset?: number): Date;
 export declare function normalizeToTenantDay(instant: Date, tz: string): Date;
 export declare function computeAttendanceMetrics(rec: {

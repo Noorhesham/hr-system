@@ -12,6 +12,7 @@ const database_module_1 = require("../../database/database.module");
 const tenant_module_1 = require("../tenant/tenant.module");
 const company_service_1 = require("./company.service");
 const company_controller_1 = require("./company.controller");
+const benefits_sync_service_1 = require("./benefits-sync.service");
 let CompanyModule = class CompanyModule {
 };
 exports.CompanyModule = CompanyModule;
@@ -19,7 +20,8 @@ exports.CompanyModule = CompanyModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, tenant_module_1.TenantModule],
         controllers: [company_controller_1.CompanyController],
-        providers: [company_service_1.CompanyService],
+        providers: [company_service_1.CompanyService, benefits_sync_service_1.BenefitsSyncService],
+        exports: [company_service_1.CompanyService, benefits_sync_service_1.BenefitsSyncService],
     })
 ], CompanyModule);
 //# sourceMappingURL=company.module.js.map

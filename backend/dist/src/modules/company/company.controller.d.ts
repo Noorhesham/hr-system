@@ -1,8 +1,32 @@
 import { CompanyService } from './company.service';
 import { UpdatePolicyDto } from './dto/update-policy.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
 export declare class CompanyController {
     private readonly companyService;
     constructor(companyService: CompanyService);
+    getCompany(companyId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        establishmentNumber: string | null;
+        website: string | null;
+        industry: string | null;
+        logoUrl: string | null;
+        subscriptionStatus: import("@prisma/client").$Enums.SubscriptionStatus;
+        trialEndsAt: Date | null;
+    }>;
+    updateCompany(companyId: string, dto: UpdateCompanyDto): Promise<{
+        id: string;
+        updatedAt: Date;
+        name: string;
+        establishmentNumber: string | null;
+        website: string | null;
+        industry: string | null;
+        logoUrl: string | null;
+        subscriptionStatus: import("@prisma/client").$Enums.SubscriptionStatus;
+        trialEndsAt: Date | null;
+    }>;
     getPolicy(companyId: string): Promise<{
         id: string;
         createdAt: Date;
@@ -17,6 +41,20 @@ export declare class CompanyController {
         gosiCompanyPercentage: import("@prisma/client/runtime/library").Decimal;
         gosiNumber: string | null;
         defaultWeekendDays: string[];
+        currency: string;
+        payrollCycle: string;
+        payrollPayoutDay: number;
+        directBankTransfer: boolean;
+        medicalInsuranceProvider: string | null;
+        medicalInsuranceTier: string | null;
+        gosiAutoEnroll: boolean;
+        benefitHousingAllowance: boolean;
+        benefitTransportAllowance: boolean;
+        benefitAnnualTickets: boolean;
+        benefitHousingAllowanceAmount: import("@prisma/client/runtime/library").Decimal | null;
+        benefitHousingAllowanceIsPercentage: boolean;
+        benefitTransportAllowanceAmount: import("@prisma/client/runtime/library").Decimal | null;
+        benefitAnnualTicketsAmount: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     updatePolicy(companyId: string, dto: UpdatePolicyDto): Promise<{
         id: string;
@@ -32,5 +70,19 @@ export declare class CompanyController {
         gosiCompanyPercentage: import("@prisma/client/runtime/library").Decimal;
         gosiNumber: string | null;
         defaultWeekendDays: string[];
+        currency: string;
+        payrollCycle: string;
+        payrollPayoutDay: number;
+        directBankTransfer: boolean;
+        medicalInsuranceProvider: string | null;
+        medicalInsuranceTier: string | null;
+        gosiAutoEnroll: boolean;
+        benefitHousingAllowance: boolean;
+        benefitTransportAllowance: boolean;
+        benefitAnnualTickets: boolean;
+        benefitHousingAllowanceAmount: import("@prisma/client/runtime/library").Decimal | null;
+        benefitHousingAllowanceIsPercentage: boolean;
+        benefitTransportAllowanceAmount: import("@prisma/client/runtime/library").Decimal | null;
+        benefitAnnualTicketsAmount: import("@prisma/client/runtime/library").Decimal | null;
     }>;
 }
