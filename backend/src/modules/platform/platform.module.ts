@@ -3,6 +3,7 @@ import { DatabaseModule } from '../../database/database.module';
 import { PlatformSettingsService } from './platform-settings.service';
 import { LimitsService } from './limits.service';
 import { PlatformController } from './platform.controller';
+import { PlatformService } from './platform.service';
 
 /**
  * Platform-wide (non-tenant) concerns: global settings + the limits resolver.
@@ -11,7 +12,7 @@ import { PlatformController } from './platform.controller';
 @Module({
   imports: [DatabaseModule],
   controllers: [PlatformController],
-  providers: [PlatformSettingsService, LimitsService],
+  providers: [PlatformSettingsService, LimitsService, PlatformService],
   exports: [PlatformSettingsService, LimitsService],
 })
 export class PlatformModule {}
