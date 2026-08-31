@@ -72,7 +72,15 @@ export class PayrollService {
       },
     });
 
-    await this.runCalculation(companyId, cycle.id);
+    try {
+      await this.runCalculation(companyId, cycle.id);
+    } catch (err) {
+      // Avoid orphan empty DRAFT + 409 on retry when calc times out.
+      await this.db.payrollCycle
+        .delete({ where: { id: cycle.id } })
+        .catch(() => undefined);
+      throw err;
+    }
     return this.findOne(companyId, cycle.id);
   }
 
@@ -610,47 +618,54 @@ export class PayrollService {
       to,
     );
 
-    await this.db.$transaction(async (tx) => {
-      for (const emp of employees) {
-        const loanAmounts = emp.loans.flatMap((l) =>
-          l.installments.map((i) => i.amount),
-        );
-        const installmentIds = emp.loans.flatMap((l) =>
-          l.installments.map((i) => i.id),
-        );
+    // Compute in memory first — Neon interactive txs die after ~5s if we
+    // await one create() per employee (248 slips easily exceeds that).
+    const slipRows: Prisma.PayrollSlipCreateManyInput[] = [];
+    const installmentIds: string[] = [];
 
-        const slip = calculateEmployeeSlip({
-          basicSalary: emp.basicSalary,
-          salaryBasis: emp.salaryBasis,
-          isGosiRegistered: emp.isGosiRegistered,
-          components: emp.salaryComponents,
-          attendance: emp.attendanceRecords,
-          policy,
-          loanInstallmentAmounts: loanAmounts,
-          approvedOvertime: otByEmp.get(emp.id) ?? [],
-        });
+    for (const emp of employees) {
+      const loanAmounts = emp.loans.flatMap((l) =>
+        l.installments.map((i) => i.amount),
+      );
+      installmentIds.push(
+        ...emp.loans.flatMap((l) => l.installments.map((i) => i.id)),
+      );
 
-        await tx.payrollSlip.create({
-          data: {
-            payrollCycleId: cycleId,
-            employeeId: emp.id,
-            basicSalary: slip.basicSalary,
-            totalAllowances: slip.totalAllowances,
-            totalDeductions: slip.totalDeductions,
-            loanDeductions: slip.loanDeductions,
-            overtimeBonus: slip.overtimeBonus,
-            netSalary: slip.netSalary,
-          },
-        });
+      const slip = calculateEmployeeSlip({
+        basicSalary: emp.basicSalary,
+        salaryBasis: emp.salaryBasis,
+        isGosiRegistered: emp.isGosiRegistered,
+        components: emp.salaryComponents,
+        attendance: emp.attendanceRecords,
+        policy,
+        loanInstallmentAmounts: loanAmounts,
+        approvedOvertime: otByEmp.get(emp.id) ?? [],
+      });
 
+      slipRows.push({
+        payrollCycleId: cycleId,
+        employeeId: emp.id,
+        basicSalary: slip.basicSalary,
+        totalAllowances: slip.totalAllowances,
+        totalDeductions: slip.totalDeductions,
+        loanDeductions: slip.loanDeductions,
+        overtimeBonus: slip.overtimeBonus,
+        netSalary: slip.netSalary,
+      });
+    }
+
+    await this.db.$transaction(
+      async (tx) => {
+        await tx.payrollSlip.createMany({ data: slipRows });
         if (installmentIds.length) {
           await tx.loanInstallment.updateMany({
             where: { id: { in: installmentIds } },
             data: { payrollCycleId: cycleId },
           });
         }
-      }
-    });
+      },
+      { timeout: 120_000, maxWait: 20_000 },
+    );
   }
 
   private assertStatus(

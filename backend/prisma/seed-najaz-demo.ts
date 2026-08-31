@@ -277,6 +277,36 @@ export async function seedNajazDemo(prisma: PrismaClient, planId: string) {
   const ownerRole = await ensureOwnerRole(prisma, company.id);
   await ensureEmployeeRole(prisma, company.id);
 
+  const staffPasswordHash = await hash('Staff@1234');
+  for (const s of [
+    { email: 'hr@najaz.sa', roleName: 'HR' },
+    { email: 'manager@najaz.sa', roleName: 'Manager' },
+    { email: 'payroll@najaz.sa', roleName: 'Payroll' },
+  ] as const) {
+    const role = await prisma.role.findUnique({
+      where: { companyId_name: { companyId: company.id, name: s.roleName } },
+    });
+    if (!role) continue;
+    await prisma.user.upsert({
+      where: { email: s.email },
+      update: {
+        password: staffPasswordHash,
+        companyId: company.id,
+        roleId: role.id,
+        isPortalUser: false,
+        isPlatformAdmin: false,
+      },
+      create: {
+        email: s.email,
+        password: staffPasswordHash,
+        companyId: company.id,
+        roleId: role.id,
+        isPortalUser: false,
+      },
+    });
+    console.log(`✓ نجاز ${s.roleName}  ${s.email} / Staff@1234`);
+  }
+
   await prisma.companyPolicy.upsert({
     where: { companyId: company.id },
     update: {

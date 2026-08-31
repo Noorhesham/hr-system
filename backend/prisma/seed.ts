@@ -110,6 +110,46 @@ const SYSTEM_ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
 };
 
+/** Shared password for HR / Manager / Payroll demo logins. */
+const STAFF_PASSWORD = 'Staff@1234';
+
+async function seedStaffUsers(companyId: string, emailDomain: string) {
+  const passwordHash = await hash(STAFF_PASSWORD);
+  const staff = [
+    { email: `hr@${emailDomain}`, roleName: 'HR' },
+    { email: `manager@${emailDomain}`, roleName: 'Manager' },
+    { email: `payroll@${emailDomain}`, roleName: 'Payroll' },
+  ] as const;
+
+  for (const s of staff) {
+    const role = await prisma.role.findUnique({
+      where: { companyId_name: { companyId, name: s.roleName } },
+    });
+    if (!role) {
+      console.warn(`⚠ Role "${s.roleName}" missing for ${companyId} — skip ${s.email}`);
+      continue;
+    }
+    await prisma.user.upsert({
+      where: { email: s.email },
+      update: {
+        password: passwordHash,
+        companyId,
+        roleId: role.id,
+        isPortalUser: false,
+        isPlatformAdmin: false,
+      },
+      create: {
+        email: s.email,
+        password: passwordHash,
+        companyId,
+        roleId: role.id,
+        isPortalUser: false,
+      },
+    });
+    console.log(`✓ Staff ${s.roleName.padEnd(8)} ${s.email} / ${STAFF_PASSWORD}`);
+  }
+}
+
 async function waitForDb(retries = 15, delayMs = 3000) {
   for (let i = 1; i <= retries; i++) {
     try {
@@ -893,6 +933,7 @@ async function main() {
   });
 
   const shifts = await seedShifts(najd.company.id);
+  await seedStaffUsers(najd.company.id, 'najd.sa');
   const emps = await seedEmployees(najd.company.id, shifts, NAJD_EMPLOYEES);
   await seedDocuments(emps);
   const attendancePeriod = await seedAttendance(
@@ -919,10 +960,18 @@ async function main() {
   console.log(`    ${PLATFORM.email} / ${PLATFORM.password}`);
   console.log('  Najd Trading — Company Owner');
   console.log(`    ${NAJD.email} / ${NAJD.password}`);
+  console.log('  Najd Trading — Staff roles (password Staff@1234)');
+  console.log('    hr@najd.sa        → HR');
+  console.log('    manager@najd.sa   → Manager');
+  console.log('    payroll@najd.sa   → Payroll / accountant');
   console.log('  Najd Trading — Employees (all same password Emp@12345)');
   for (const e of NAJD_EMPLOYEES) {
     console.log(`    ${e.email}`);
   }
+  console.log('  نجاز — Staff roles (password Staff@1234)');
+  console.log('    hr@najaz.sa        → HR');
+  console.log('    manager@najaz.sa   → Manager');
+  console.log('    payroll@najaz.sa   → Payroll / accountant');
   console.log('  Red Sea Logistics — Owner (tenant B)');
   console.log(`    ${RED_SEA.email} / ${RED_SEA.password}`);
   console.log('  Red Sea — Employee');
