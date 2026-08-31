@@ -36,6 +36,7 @@ import {
   ChartBarIcon,
   ShieldIcon,
   Settings2Icon,
+  CreditCardIcon,
 } from "lucide-react";
 
 type NavItem = {
@@ -54,10 +55,28 @@ type NavGroup = {
   label: string;
   /** Shown only to portal employees (self-service). */
   portalOnly?: boolean;
+  /** Shown only to platform SaaS operators (`isPlatformAdmin`). */
+  platformOnly?: boolean;
   items: NavItem[];
 };
 
 const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "المنصة",
+    platformOnly: true,
+    items: [
+      {
+        title: "الشركات",
+        url: "/platform/companies",
+        icon: <Building2Icon />,
+      },
+      {
+        title: "الباقات",
+        url: "/platform/plans",
+        icon: <CreditCardIcon />,
+      },
+    ],
+  },
   {
     label: "نظرة عامة",
     items: [
@@ -214,8 +233,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const isPortal = Boolean(user?.isPortalUser);
   const isOwner = user?.roleName === COMPANY_OWNER_ROLE;
+  const isPlatformAdmin = Boolean(user?.isPlatformAdmin);
 
   const visibleGroups = NAV_GROUPS.map((group) => {
+    if (group.platformOnly && !isPlatformAdmin) {
+      return { ...group, items: [] as NavItem[] };
+    }
     if (group.portalOnly && !isPortal) {
       return { ...group, items: [] as NavItem[] };
     }
