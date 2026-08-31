@@ -688,7 +688,7 @@ function StepPersonal({
         </Field>
         <Field label="الجنس" required>
           <Select
-            value={form.gender || undefined}
+            value={form.gender || null}
             onValueChange={(v) => {
               if (v) patch("gender", v as Gender)
             }}
@@ -711,7 +711,7 @@ function StepPersonal({
         </Field>
         <Field label="الحالة الاجتماعية" required>
           <Select
-            value={form.maritalStatus || undefined}
+            value={form.maritalStatus || null}
             onValueChange={(v) => {
               if (v) patch("maritalStatus", v as MaritalStatus)
             }}

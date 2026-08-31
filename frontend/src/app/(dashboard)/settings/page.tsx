@@ -1124,7 +1124,7 @@ function BenefitsTab({
           <div className="space-y-2.5">
             <label className="text-sm font-medium">مزود التأمين</label>
             <Select
-              value={values.provider || undefined}
+              value={values.provider || null}
               onValueChange={(v) => {
                 if (v !== null)
                   form.setValue("provider", v, { shouldValidate: true })

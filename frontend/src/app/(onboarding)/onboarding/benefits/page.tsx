@@ -206,7 +206,7 @@ export default function OnboardingBenefitsPage() {
                   مزود التأمين
                 </label>
                 <Select
-                  value={values.provider || undefined}
+                  value={values.provider || null}
                   onValueChange={(v) => {
                     if (v !== null) {
                       form.setValue("provider", v, { shouldValidate: true })

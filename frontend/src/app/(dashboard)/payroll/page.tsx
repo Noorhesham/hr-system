@@ -224,6 +224,20 @@ function cycleLabel(c: Pick<Cycle, "month" | "year">) {
   return `${MONTH_AR[c.month] ?? c.month} ${c.year}`
 }
 
+function sortCycles(list: Cycle[]) {
+  return [...list].sort((a, b) => {
+    if (a.year !== b.year) return b.year - a.year
+    if (a.month !== b.month) return b.month - a.month
+    return b.createdAt.localeCompare(a.createdAt)
+  })
+}
+
+/** Prefer a cycle that already has slips so the page doesn't look empty. */
+function pickDefaultCycleId(list: Cycle[]): string {
+  const withSlips = list.find((c) => (c._count?.payrollSlips ?? 0) > 0)
+  return withSlips?.id ?? list[0]?.id ?? ""
+}
+
 export default function PayrollPage() {
   const { can } = usePermission()
   const canManage = can(PERMISSIONS.MANAGE_PAYROLL)
@@ -266,11 +280,11 @@ export default function PayrollPage() {
         order: "desc",
       })
       const res = await apiFetch<{ data: Cycle[] }>(`/payroll/cycles?${params}`)
-      const list = res.data ?? []
+      const list = sortCycles(res.data ?? [])
       setCycles(list)
       setSelectedId((prev) => {
         if (prev && list.some((c) => c.id === prev)) return prev
-        return list[0]?.id ?? ""
+        return pickDefaultCycleId(list)
       })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر تحميل الدورات")
@@ -591,34 +605,53 @@ export default function PayrollPage() {
                 />
               </div>
               <Select
-                value={selectedId || undefined}
+                value={selectedId || null}
                 onValueChange={(v) => {
                   if (v) setSelectedId(v)
                 }}
               >
-                <SelectTrigger className="h-9! w-full rounded-lg sm:w-44">
-                  <CalendarIcon className="size-4 text-muted-foreground" />
+                <SelectTrigger className="h-9! w-full rounded-lg sm:w-56">
+                  <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
                   <SelectValue>
-                    {() =>
-                      selected
-                        ? cycleLabel(selected)
-                        : loadingCycles
-                          ? "جاري التحميل..."
-                          : "اختر الدورة"
-                    }
+                    {() => {
+                      if (loadingCycles) return "جاري التحميل..."
+                      const c =
+                        selected ??
+                        visibleCycles.find((x) => x.id === selectedId) ??
+                        null
+                      if (!c) return "اختر الدورة"
+                      const status = STATUS_UI[c.status]?.label ?? c.status
+                      return `${cycleLabel(c)} · ${status}`
+                    }}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  alignItemWithTrigger={false}
+                  className="max-h-72 min-w-56"
+                >
                   {visibleCycles.length === 0 ? (
                     <div className="px-3 py-4 text-center text-sm text-muted-foreground">
                       لا توجد دورات
                     </div>
                   ) : (
-                    visibleCycles.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {cycleLabel(c)}
-                      </SelectItem>
-                    ))
+                    visibleCycles.map((c) => {
+                      const slips = c._count?.payrollSlips ?? 0
+                      const status = STATUS_UI[c.status]
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex min-w-0 flex-col gap-0.5 py-0.5 text-start">
+                            <span className="font-medium">
+                              {cycleLabel(c)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {status?.label ?? c.status}
+                              {" · "}
+                              {slips} قسيمة
+                            </span>
+                          </span>
+                        </SelectItem>
+                      )
+                    })
                   )}
                 </SelectContent>
               </Select>
@@ -701,7 +734,12 @@ export default function PayrollPage() {
                       colSpan={9}
                       className="h-40 text-center text-muted-foreground"
                     >
-                      لا توجد قسائم مطابقة للبحث
+                      {selected?.status === "DRAFT" &&
+                      (selected._count?.payrollSlips ?? 0) === 0 &&
+                      !debouncedSearch &&
+                      department === "ALL"
+                        ? "الدورة فاضية — اضغط «إعادة حساب» عشان تتولد القسائم"
+                        : "لا توجد قسائم مطابقة للبحث"}
                     </TableCell>
                   </TableRow>
                 ) : (
