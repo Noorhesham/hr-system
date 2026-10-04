@@ -26,7 +26,7 @@ export default function OnboardingWelcomePage() {
 
         <div className="mt-2 flex flex-col items-center gap-6 text-center">
           <h1 className="text-[32px] leading-none font-bold text-foreground">
-            مرحبـــًا بك في <span className="text-primary">نجـــــــاز</span> 👋
+            مرحبـــًا بك في <span className="text-primary">جاهز</span> 👋
           </h1>
 
           <div className="flex flex-col items-center gap-2">

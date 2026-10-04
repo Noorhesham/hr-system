@@ -167,7 +167,7 @@ export default function ForgotPasswordPage() {
           <FormInput
             name="email"
             label="البريد الالكتروني"
-            placeholder="ahmed.salem@nejaz.com"
+            placeholder="ahmed.salem@jahez.com"
             inputType="email"
             formType="input"
             required

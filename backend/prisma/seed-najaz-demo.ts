@@ -23,7 +23,7 @@ export const NAJAZ_DEMO = {
   companyId: 'seed-najaz-demo',
   email: 'noordragon20014@gmail.com',
   password: 'Owner@1234',
-  name: 'نجاز',
+  name: 'جاهز',
   fullName: 'مهاب محمد',
   jobTitle: 'UI/UX Designer',
   establishmentNumber: '1-7002026',
@@ -249,7 +249,7 @@ async function ensureEmployeeRole(prisma: PrismaClient, companyId: string) {
 }
 
 export async function seedNajazDemo(prisma: PrismaClient, planId: string) {
-  console.log('\n▶ Seeding نجاز dashboard demo (noordragon)…');
+  console.log('\n▶ Seeding جاهز dashboard demo (noordragon)…');
 
   const passwordHash = await hash(NAJAZ_DEMO.password);
 
@@ -304,7 +304,7 @@ export async function seedNajazDemo(prisma: PrismaClient, planId: string) {
         isPortalUser: false,
       },
     });
-    console.log(`✓ نجاز ${s.roleName}  ${s.email} / Staff@1234`);
+    console.log(`✓ جاهز ${s.roleName}  ${s.email} / Staff@1234`);
   }
 
   await prisma.companyPolicy.upsert({
@@ -755,7 +755,7 @@ export async function seedNajazDemo(prisma: PrismaClient, planId: string) {
   }
 
   console.log(
-    `✓ نجاز demo: ${employees.length} employees, attendance, leaves, 6 payroll cycles`,
+    `✓ جاهز demo: ${employees.length} employees, attendance, leaves, 6 payroll cycles`,
   );
   console.log(
     `  Login: ${NAJAZ_DEMO.email} / ${NAJAZ_DEMO.password} (owner ${owner.id})`,

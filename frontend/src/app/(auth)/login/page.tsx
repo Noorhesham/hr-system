@@ -88,7 +88,7 @@ export default function LoginPage() {
       <header className="mb-8 text-right">
         <h1 className="font-sans text-[32px] font-bold leading-none text-foreground">
           مرحبـــًا بك في{" "}
-          <span className="text-primary">نجــــــــاز</span>
+          <span className="text-primary">جاهز</span>
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           سجل الدخول للوصول إلى حسابك وإدارة أعمالك بسهولة وأمان.
@@ -107,7 +107,7 @@ export default function LoginPage() {
           <FormInput
             name="email"
             label="البريد الإلكتروني"
-            placeholder="ahmed.salem@nejaz.com"
+            placeholder="ahmed.salem@jahez.com"
             inputType="email"
             formType="input"
             required

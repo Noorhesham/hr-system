@@ -83,11 +83,11 @@ export function priceForCycle(
 }
 
 export const SALES_MAILTO =
-  "mailto:sales@najaz.sa?subject=" +
+  "mailto:sales@jahez.sa?subject=" +
   encodeURIComponent("استفسار عن باقة المؤسسات")
 
 export const SUPPORT_MAILTO =
-  "mailto:support@najaz.sa?subject=" +
+  "mailto:support@jahez.sa?subject=" +
   encodeURIComponent("مساعدة بخصوص الدفع")
 
 /** Free trial card — not from GET /plans; no payment required. */

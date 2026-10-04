@@ -954,7 +954,7 @@ async function main() {
   console.log('\n══════════════════════════════════════════════════');
   console.log('  LOGIN CREDENTIALS');
   console.log('══════════════════════════════════════════════════');
-  console.log('  نجاز demo dashboard (rich data)');
+  console.log('  جاهز demo dashboard (rich data)');
   console.log(`    ${NAJAZ_DEMO.email} / ${NAJAZ_DEMO.password}`);
   console.log('  Platform admin');
   console.log(`    ${PLATFORM.email} / ${PLATFORM.password}`);
@@ -968,7 +968,7 @@ async function main() {
   for (const e of NAJD_EMPLOYEES) {
     console.log(`    ${e.email}`);
   }
-  console.log('  نجاز — Staff roles (password Staff@1234)');
+  console.log('  جاهز — Staff roles (password Staff@1234)');
   console.log('    hr@najaz.sa        → HR');
   console.log('    manager@najaz.sa   → Manager');
   console.log('    payroll@najaz.sa   → Payroll / accountant');
