@@ -36,8 +36,8 @@ export function BillingHeader({
         {backLabel}
       </Link>
       <Image
-        src="/logo.png"
-        alt="نجاز"
+        src="/logo2.png"
+        alt="جاهـــــز"
         width={88}
         height={56}
         priority

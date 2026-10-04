@@ -244,7 +244,7 @@ export default function OnboardingAdminAccountPage() {
               <a href="#" className="text-primary underline">
                 سياسة الخصوصية
               </a>{" "}
-              الخاصة بمنصة نجاز.
+              الخاصة بمنصة جاهـــــز.
             </span>
           </label>
 

@@ -122,7 +122,7 @@ function formatDateAr(iso: string | undefined): string {
 
 function downloadReceipt(result: SubscriptionResultDraft, subscriber: string) {
   const lines = [
-    "فاتورة اشتراك نجاز (تجريبي)",
+    "فاتورة اشتراك جاهـــــز (تجريبي)",
     "================================",
     `المشترك: ${subscriber}`,
     `رقم الاشتراك: ${result.subscriptionNumber ?? "—"}`,
@@ -306,7 +306,7 @@ export default function OnboardingPaymentPage() {
             تم تفعيل الاشتراك بنجاح
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            يمكنك الآن متابعة إعداد شركتك على منصة نجاز
+            يمكنك الآن متابعة إعداد شركتك على منصة جاهـــــز
           </p>
 
           <dl className="mt-8 space-y-3 text-start text-sm">

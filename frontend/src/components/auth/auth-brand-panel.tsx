@@ -34,7 +34,7 @@ export function AuthBrandPanel() {
       <div className="relative z-10 flex h-full min-h-0 flex-col items-center px-8 py-8 xl:px-10">
         <Image
           src="/logo.png"
-          alt="نجاز"
+          alt="جاهـــــز"
           width={116}
           height={74}
           priority
@@ -42,7 +42,7 @@ export function AuthBrandPanel() {
         />
 
         <h2 className="mt-5 max-w-[28rem] shrink-0 text-center font-almarai text-[48px] font-bold leading-[150%] text-white">
-          نظــام نجـــــاز لإدارة
+          نظــام جاهـــــز لإدارة
           <br />
           المـــــــــــــوارد البـشـريـة
         </h2>

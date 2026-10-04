@@ -264,11 +264,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <Link href="/dashboard" className="flex min-w-0 items-center px-1 py-1">
             <Image
               src="/logo2.png"
-              alt="نجاز"
+              alt="جاهـــــز"
               width={140}
               height={44}
               priority
-              className="h-9 w-auto object-contain object-right mix-blend-multiply"
+              className="h-9 w-auto object-contain object-right"
             />
           </Link>
           <SidebarTrigger className="size-8 shrink-0 rounded-md border border-border bg-white" />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
-import { Almarai, Changa, Geist_Mono } from "next/font/google"
+import localFont from "next/font/local"
+import { Geist_Mono } from "next/font/google"
 
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -8,16 +9,36 @@ import { AuthProvider } from "@/providers/auth-provider"
 
 import "./globals.css"
 
-const changa = Changa({
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-changa",
-})
-
-const almarai = Almarai({
-  subsets: ["arabic"],
-  weight: ["400", "700", "800"],
-  variable: "--font-almarai-face",
+const thmanyahSans = localFont({
+  src: [
+    {
+      path: "../fonts/thmanyah-sans/thmanyah-sans-Light.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../fonts/thmanyah-sans/thmanyah-sans-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/thmanyah-sans/thmanyah-sans-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/thmanyah-sans/thmanyah-sans-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../fonts/thmanyah-sans/thmanyah-sans-Black.woff2",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-thmanyah",
+  display: "swap",
 })
 
 const geistMono = Geist_Mono({
@@ -26,7 +47,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "نجاز — نظام الموارد البشرية",
+  title: "جاهـــــز — نظام الموارد البشرية",
   description: "منصة إدارة الرواتب والحضور والموظفين",
 }
 
@@ -39,7 +60,7 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${changa.variable} ${almarai.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${thmanyahSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
         <TooltipProvider>
