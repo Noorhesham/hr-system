@@ -12,7 +12,8 @@ import { Form } from "@/components/ui/form"
 import { FormInput } from "@/components/form"
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell"
 import { OnboardingFooter } from "@/components/onboarding/onboarding-footer"
-import { uploadOnboardingLogo } from "@/lib/api-client"
+import { apiFetch, uploadOnboardingLogo } from "@/lib/api-client"
+import { useAuth } from "@/hooks/use-auth"
 import {
   getOnboardingDraft,
   patchOnboardingDraft,
@@ -43,6 +44,7 @@ type CompanyProfileValues = z.infer<typeof companyProfileSchema>
 
 export default function OnboardingCompanyProfilePage() {
   const router = useRouter()
+  const { status, user } = useAuth()
   const draft = getOnboardingDraft().company
   const [logoUrl, setLogoUrl] = React.useState<string | null>(
     draft?.logoUrl ?? null,
@@ -118,7 +120,7 @@ export default function OnboardingCompanyProfilePage() {
 
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit((values) => {
+          onSubmit={form.handleSubmit(async (values) => {
             const effectiveLogo =
               logoUrl && !logoUrl.startsWith("data:")
                 ? logoUrl
@@ -139,6 +141,31 @@ export default function OnboardingCompanyProfilePage() {
                 logoUrl: effectiveLogo,
               },
             })
+
+            const isAlreadyUser =
+              status === "authenticated" ||
+              user != null ||
+              getOnboardingDraft().registered
+
+            if (isAlreadyUser) {
+              try {
+                await apiFetch("/company", {
+                  method: "PATCH",
+                  body: {
+                    name: values.companyName,
+                    website: values.website,
+                    industry: values.industry,
+                    logoUrl: effectiveLogo,
+                  },
+                })
+              } catch {
+                // Ignore if patch failed; draft updated
+              }
+              setLocalOnboardingStep("pricing")
+              router.push("/onboarding/pricing")
+              return
+            }
+
             setLocalOnboardingStep("admin-account")
             router.push("/onboarding/admin-account")
           })}

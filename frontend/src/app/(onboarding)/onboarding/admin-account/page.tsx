@@ -1,10 +1,12 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Form } from "@/components/ui/form"
@@ -14,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell"
 import { OnboardingFooter } from "@/components/onboarding/onboarding-footer"
 import { useAuth } from "@/hooks/use-auth"
-import { apiFetch } from "@/lib/api-client"
+import { apiFetch, ApiError } from "@/lib/api-client"
 import {
   getOnboardingDraft,
   patchOnboardingDraft,
@@ -28,7 +30,10 @@ const adminAccountSchema = z
     phone: z
       .string()
       .min(1, "رقم الجوال مطلوب")
-      .regex(/^\d{8,10}$/, "أدخل رقم جوال صحيح"),
+      .refine((val) => {
+        const digits = val.replace(/\D/g, "")
+        return digits.length >= 8 && digits.length <= 15
+      }, "أدخل رقم جوال صحيح"),
     email: z
       .string()
       .min(1, "البريد الإلكتروني مطلوب")
@@ -59,17 +64,22 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function OnboardingAdminAccountPage() {
   const router = useRouter()
-  const { register } = useAuth()
+  const { register, login, user, status } = useAuth()
   const draft = getOnboardingDraft()
   const [twoFactorEnabled, setTwoFactorEnabled] = React.useState(true)
   const [agreedToTerms, setAgreedToTerms] = React.useState(false)
   const [pending, setPending] = React.useState(false)
 
+  // Redirect if already authenticated or registered
   React.useEffect(() => {
+    if (status === "authenticated" || user != null || draft.registered) {
+      router.replace("/onboarding/pricing")
+      return
+    }
     if (!draft.company?.companyName) {
       router.replace("/onboarding/company-profile")
     }
-  }, [draft.company?.companyName, router])
+  }, [status, user, draft.registered, draft.company?.companyName, router])
 
   const form = useForm<AdminAccountValues>({
     resolver: zodResolver(adminAccountSchema),
@@ -83,6 +93,16 @@ export default function OnboardingAdminAccountPage() {
     },
     mode: "onChange",
   })
+
+  // If already logged in, show loader while redirecting to avoid flashing the form
+  if (status === "loading" || status === "authenticated" || user != null || draft.registered) {
+    return (
+      <div className="mx-auto flex w-full max-w-xl flex-col items-center justify-center gap-4 p-12 text-center">
+        <Loader2 className="size-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">جاري المتابعة إلى الخطوة التالية...</p>
+      </div>
+    )
+  }
 
   async function onSubmit(values: AdminAccountValues) {
     const company = getOnboardingDraft().company
@@ -104,15 +124,17 @@ export default function OnboardingAdminAccountPage() {
 
       const logoUrl = company.logoUrl
 
-      await apiFetch("/company", {
-        method: "PATCH",
-        body: {
-          name: company.companyName,
-          website: company.website,
-          industry: company.industry,
-          ...(logoUrl ? { logoUrl } : {}),
-        },
-      })
+      try {
+        await apiFetch("/company", {
+          method: "PATCH",
+          body: {
+            name: company.companyName,
+            website: company.website,
+            industry: company.industry,
+            ...(logoUrl ? { logoUrl } : {}),
+          },
+        })
+      } catch {}
 
       patchOnboardingDraft({
         company: { ...company, logoUrl },
@@ -128,7 +150,59 @@ export default function OnboardingAdminAccountPage() {
 
       toast.success("تم إنشاء الحساب بنجاح")
       router.push("/onboarding/pricing")
-    } catch (err) {
+    } catch (err: unknown) {
+      const isAlreadyRegistered =
+        (err instanceof ApiError && err.status === 409) ||
+        (err instanceof Error &&
+          (err.message.includes("already registered") ||
+            err.message.includes("مسجل بالفعل") ||
+            err.message.includes("Conflict") ||
+            err.message.includes("409")))
+
+      if (isAlreadyRegistered) {
+        try {
+          // Email already exists - attempt automatic login with the provided credentials!
+          await login({
+            email: values.email.trim().toLowerCase(),
+            password: values.password,
+          })
+
+          const logoUrl = company.logoUrl
+          try {
+            await apiFetch("/company", {
+              method: "PATCH",
+              body: {
+                name: company.companyName,
+                website: company.website,
+                industry: company.industry,
+                ...(logoUrl ? { logoUrl } : {}),
+              },
+            })
+          } catch {}
+
+          patchOnboardingDraft({
+            company: { ...company, logoUrl },
+            admin: {
+              fullName: values.fullName,
+              jobTitle: values.jobTitle,
+              email: values.email,
+              phone: values.phone,
+            },
+            registered: true,
+          })
+          setLocalOnboardingStep("pricing")
+
+          toast.success("تم تسجيل الدخول واستكمال الخطوات بنجاح")
+          router.push("/onboarding/pricing")
+          return
+        } catch {
+          toast.error(
+            "هذا البريد الإلكتروني مسجل بالفعل ولكن كلمة المرور غير مطابقة. يمكنك تسجيل الدخول بحسابك للمتابعة.",
+          )
+          return
+        }
+      }
+
       toast.error(
         err instanceof Error ? err.message : "تعذر إنشاء الحساب",
       )
@@ -254,6 +328,16 @@ export default function OnboardingAdminAccountPage() {
             nextDisabled={!form.formState.isValid || !agreedToTerms}
             nextPending={pending}
           />
+
+          <div className="text-center text-sm text-muted-foreground">
+            لديك حساب بالفعل؟{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-primary underline hover:text-primary/80"
+            >
+              تسجيل الدخول
+            </Link>
+          </div>
         </form>
       </Form>
     </OnboardingShell>

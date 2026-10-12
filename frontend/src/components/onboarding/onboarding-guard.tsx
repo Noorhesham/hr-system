@@ -98,6 +98,12 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
         return
       }
 
+      // Authenticated users must never be on admin-account (registration).
+      if (current === "admin-account") {
+        router.replace("/onboarding/pricing")
+        return
+      }
+
       // Legacy authenticated user with no onboarding — leave pre-auth alone,
       // but don't let them hang on post-auth onboarding pages.
       if (isPostAuthStep(current)) {

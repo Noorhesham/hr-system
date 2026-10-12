@@ -115,7 +115,7 @@ export default function OnboardingPricingPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
-      <BillingHeader backHref="/onboarding/admin-account" />
+      <BillingHeader backHref="/onboarding/company-profile" />
 
       <div className="mb-8 text-center">
         <h1 className="font-almarai text-2xl font-bold text-foreground sm:text-3xl">

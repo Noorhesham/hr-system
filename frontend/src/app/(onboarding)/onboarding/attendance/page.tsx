@@ -193,7 +193,7 @@ export default function OnboardingAttendancePage() {
           </div>
 
           <OnboardingFooter
-            onBack={() => router.push("/onboarding/admin-account")}
+            onBack={() => router.push("/onboarding/pricing")}
             nextType="submit"
             onSkip={() => form.handleSubmit(saveAndNext)()}
             nextPending={pending}
