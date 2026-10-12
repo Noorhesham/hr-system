@@ -93,6 +93,28 @@ type Cycle = {
   totals?: CycleTotals
 }
 
+type SlipRow = {
+  id: string
+  employeeId: string
+  payrollCycleId: string
+  basicSalary: number | string
+  totalAllowances: number | string
+  overtimeBonus: number | string
+  totalDeductions: number | string
+  loanDeductions: number | string
+  netSalary: number | string
+  employee: {
+    id: string
+    name: string
+    employeeCode: string
+    email?: string | null
+    photoUrl?: string | null
+    jobTitle?: string | null
+    isGosiRegistered?: boolean
+    department?: { id: string; name: string } | null
+  }
+}
+
 type SlipDetail = SlipRow & {
   payrollCycle: { id: string; month: number; year: number; status: CycleStatus }
   attendance: {

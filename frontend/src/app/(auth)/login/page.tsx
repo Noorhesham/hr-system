@@ -146,6 +146,16 @@ export default function LoginPage() {
           >
             {loginMutation.isPending ? "جارٍ الدخول…" : "تسجيل الدخول"}
           </Button>
+
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            ليس لديك حساب؟{" "}
+            <Link
+              href="/signup"
+              className="font-semibold text-primary hover:underline"
+            >
+              إنشاء حساب جديد
+            </Link>
+          </div>
         </form>
       </Form>
     </AuthFormShell>

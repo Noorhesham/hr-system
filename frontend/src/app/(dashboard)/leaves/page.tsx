@@ -487,17 +487,7 @@ export default function LeavesPage() {
 
       <Dialog
         open={createOpen}
-        disablePointerDismissal
-        onOpenChange={(next, details) => {
-          if (
-            !next &&
-            (details.reason === "outsidePress" || details.reason === "focusOut")
-          ) {
-            details.cancel()
-            return
-          }
-          setCreateOpen(next)
-        }}
+        onOpenChange={setCreateOpen}
       >
         <DialogContent className="overflow-visible sm:max-w-lg">
           <DialogHeader>

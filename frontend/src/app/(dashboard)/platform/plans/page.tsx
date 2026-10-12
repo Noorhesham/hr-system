@@ -44,7 +44,8 @@ const schema = z.object({
   monthlyPrice: z.coerce.number().min(0, "السعر لا يقل عن صفر"),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormInput = z.input<typeof schema>
+type FormOutput = z.output<typeof schema>
 
 function money(v: string | number) {
   const n = typeof v === "number" ? v : Number(v)
@@ -60,7 +61,7 @@ export default function PlatformPlansPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<PlanRow | null>(null)
   const [deleting, setDeleting] = React.useState(false)
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", maxEmployees: 10, monthlyPrice: 0 },
   })
@@ -98,7 +99,7 @@ export default function PlatformPlansPage() {
     setDialogOpen(true)
   }
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormOutput) {
     setSaving(true)
     try {
       if (editing) {
